@@ -25,22 +25,27 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duoc.louaraya.domain.model.Product
+import cl.duoc.louaraya.presentation.common.formatClp
+import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
-import java.text.NumberFormat
-import java.util.Locale
 
 /**
  * Pantalla de catálogo conectada a [CatalogViewModel].
+ *
+ * @param onProductClick se invoca con el id del producto seleccionado; quien
+ * aloja la pantalla decide cómo navegar.
  */
 @Composable
 fun CatalogScreen(
     viewModel: CatalogViewModel,
+    onProductClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     CatalogContent(
         uiState = uiState,
         onRetry = viewModel::loadProducts,
+        onProductClick = onProductClick,
         modifier = modifier
     )
 }
@@ -52,6 +57,7 @@ fun CatalogScreen(
 fun CatalogContent(
     uiState: CatalogUiState,
     onRetry: () -> Unit,
+    onProductClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when (uiState) {
@@ -84,6 +90,7 @@ fun CatalogContent(
 
         is CatalogUiState.Success -> ProductList(
             products = uiState.products,
+            onProductClick = onProductClick,
             modifier = modifier
         )
     }
@@ -92,6 +99,7 @@ fun CatalogContent(
 @Composable
 private fun ProductList(
     products: List<Product>,
+    onProductClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -106,14 +114,23 @@ private fun ProductList(
             )
         }
         items(products, key = { it.id }) { product ->
-            ProductCard(product)
+            ProductCard(
+                product = product,
+                onClick = { onProductClick(product.id) }
+            )
         }
     }
 }
 
 @Composable
-private fun ProductCard(product: Product) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun ProductCard(
+    product: Product,
+    onClick: () -> Unit
+) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = product.name,
@@ -152,16 +169,6 @@ private fun CenteredBox(
     }
 }
 
-private val chileanLocale: Locale = Locale.forLanguageTag("es-CL")
-
-/** Formatea un precio en pesos chilenos, por ejemplo: "$45.000 CLP". */
-private fun formatClp(price: Long): String =
-    "$" + NumberFormat.getIntegerInstance(chileanLocale).format(price) + " CLP"
-
-/** Muestra las medidas sin decimales cuando son enteras (60.0 → "60"). */
-private fun formatCm(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
-
 @Preview(showBackground = true)
 @Composable
 private fun CatalogContentPreview() {
@@ -173,7 +180,8 @@ private fun CatalogContentPreview() {
                     Product(2L, "Colgante Preview", 30.5, 50.0, "Cáñamo", 25000L)
                 )
             ),
-            onRetry = {}
+            onRetry = {},
+            onProductClick = {}
         )
     }
 }

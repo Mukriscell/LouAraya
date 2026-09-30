@@ -6,6 +6,7 @@ import cl.duoc.louaraya.data.local.LouArayaDatabase
 import cl.duoc.louaraya.data.local.seed.DemoSeedCallback
 import cl.duoc.louaraya.data.repository.ProductRepositoryImpl
 import cl.duoc.louaraya.domain.repository.ProductRepository
+import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
 import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
 
 /**
@@ -32,6 +33,10 @@ class AppContainer(context: Context) {
 
     val getProductsUseCase: GetProductsUseCase by lazy {
         GetProductsUseCase(productRepository)
+    }
+
+    val getProductByIdUseCase: GetProductByIdUseCase by lazy {
+        GetProductByIdUseCase(productRepository)
     }
 
     private companion object {
