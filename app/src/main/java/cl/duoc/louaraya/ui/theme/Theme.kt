@@ -1,4 +1,4 @@
-package com.example.louaraya.ui.theme
+package cl.duoc.louaraya.ui.theme
 
 import android.app.Activity
 import android.os.Build

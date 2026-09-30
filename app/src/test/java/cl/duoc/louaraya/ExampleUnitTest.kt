@@ -1,4 +1,4 @@
-package com.example.louaraya
+package cl.duoc.louaraya
 
 import org.junit.Test
 

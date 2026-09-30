@@ -1,4 +1,4 @@
-package com.example.louaraya
+package cl.duoc.louaraya
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,7 +11,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.louaraya.ui.theme.LouArayaTheme
+import cl.duoc.louaraya.ui.theme.LouArayaTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

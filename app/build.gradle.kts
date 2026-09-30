@@ -4,13 +4,13 @@ plugins {
 }
 
 android {
-    namespace = "com.example.louaraya"
+    namespace = "cl.duoc.louaraya"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.example.louaraya"
+        applicationId = "cl.duoc.louaraya"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
