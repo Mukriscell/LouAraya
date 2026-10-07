@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import androidx.core.content.FileProvider
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.exifinterface.media.ExifInterface
@@ -24,6 +25,43 @@ import java.util.concurrent.atomic.AtomicReference
 class LocalProductImageStorage(context: Context) : ProductImageStorage {
     private val appContext = context.applicationContext
     private val imageDirectory = File(appContext.filesDir, IMAGE_DIRECTORY)
+    private val cameraCaptureDirectory = File(appContext.filesDir, CAMERA_CAPTURE_DIRECTORY)
+
+    override suspend fun createCameraCaptureUri(): String {
+        val createdFile = AtomicReference<File?>(null)
+        try {
+            return withContext(Dispatchers.IO) {
+                check(cameraCaptureDirectory.mkdirs() || cameraCaptureDirectory.isDirectory) {
+                    "No se pudo preparar la captura de fotografía."
+                }
+                val file = File(cameraCaptureDirectory, "${UUID.randomUUID()}.jpg")
+                check(file.createNewFile()) { "No se pudo crear el archivo temporal de fotografía." }
+                createdFile.set(file)
+                FileProvider.getUriForFile(
+                    appContext,
+                    "${appContext.packageName}.fileprovider",
+                    file
+                ).toString()
+            }
+        } catch (failure: Throwable) {
+            withContext(NonCancellable + Dispatchers.IO) { createdFile.get()?.delete() }
+            throw failure
+        }
+    }
+
+    override suspend fun deleteCameraCapture(uri: String) {
+        withContext(Dispatchers.IO) { resolveCameraCapture(uri)?.delete() }
+    }
+
+    override suspend fun cleanupAbandonedCameraCaptures(preserveUris: Set<String>) {
+        withContext(Dispatchers.IO) {
+            val preservedPaths = preserveUris.mapNotNull(::resolveCameraCapture)
+                .mapTo(mutableSetOf()) { it.canonicalPath }
+            cameraCaptureDirectory.listFiles()?.filter(File::isFile)
+                ?.filterNot { it.canonicalPath in preservedPaths }
+                ?.forEach(File::delete)
+        }
+    }
 
     override suspend fun saveFromSource(sourceUri: String): String {
         val createdFile = AtomicReference<File?>(null)
@@ -143,6 +181,18 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
         return file.takeIf { target.parentFile == base }
     }
 
+    private fun resolveCameraCapture(uriString: String): File? {
+        val uri = runCatching { uriString.toUri() }.getOrNull() ?: return null
+        if (uri.scheme != "content" || uri.authority != "${appContext.packageName}.fileprovider") return null
+        val segments = uri.pathSegments
+        if (segments.size != 2 || segments[0] != CAMERA_CAPTURE_DIRECTORY ||
+            !CAMERA_FILENAME_PATTERN.matches(segments[1])
+        ) return null
+        val file = File(cameraCaptureDirectory, segments[1])
+        val base = cameraCaptureDirectory.canonicalFile
+        return file.takeIf { it.canonicalFile.parentFile == base }
+    }
+
     private fun decodeOriented(file: File, maxDimension: Int): Bitmap? {
         require(maxDimension > 0)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -197,10 +247,12 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
 
     private companion object {
         const val IMAGE_DIRECTORY = "product-images"
+        const val CAMERA_CAPTURE_DIRECTORY = "camera-captures"
         const val MAX_SOURCE_BYTES = 25L * 1024 * 1024
         const val MAX_SOURCE_PIXELS = 100_000_000L
         const val MAX_SAVED_DIMENSION = 1600
         const val JPEG_QUALITY = 88
         val REFERENCE_PATTERN = Regex("product-images/[0-9a-fA-F-]{36}\\.jpg")
+        val CAMERA_FILENAME_PATTERN = Regex("[0-9a-fA-F-]{36}\\.jpg")
     }
 }

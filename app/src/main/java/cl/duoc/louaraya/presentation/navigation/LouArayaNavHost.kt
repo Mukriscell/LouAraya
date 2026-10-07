@@ -184,7 +184,7 @@ fun LouArayaNavHost(
             val productId = requireNotNull(entry.arguments).getLong(LouArayaRoutes.ADMIN_PRODUCT_ID_ARG)
             val imageViewModel: AdminProductImageViewModel = viewModel(
                 factory = AdminProductImageViewModelFactory(
-                    productId, getProductByIdUseCase, updateProductImageUseCase
+                    productId, getProductByIdUseCase, updateProductImageUseCase, productImageStorage
                 )
             )
             AdminProductImageScreen(

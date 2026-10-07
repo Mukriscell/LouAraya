@@ -1,6 +1,7 @@
 package cl.duoc.louaraya.presentation
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.LocalActivityResultRegistryOwner
@@ -35,14 +36,19 @@ import cl.duoc.louaraya.domain.usecase.GetCommercialRequestsUseCase
 import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
 import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
 import cl.duoc.louaraya.domain.usecase.UpdateProductImageUseCase
+import cl.duoc.louaraya.data.image.LocalProductImageStorage
 import cl.duoc.louaraya.presentation.navigation.LouArayaNavHost
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import java.util.concurrent.CopyOnWriteArrayList
+import java.io.File
 import androidx.core.app.ActivityOptionsCompat
 
 class AdminProductNavigationTest {
@@ -197,6 +203,85 @@ class AdminProductNavigationTest {
         }
     }
 
+    @Test
+    fun cameraCaptureUsesScopedFileProviderThenPersistsAfterConfirmation() = runBlocking {
+        val product = Product(
+            id = 1L, name = "Tapiz con cámara", widthCm = 60.0, lengthCm = 90.0,
+            material = "Algodón", price = 45000L, campaignCategory = CampaignCategory.WEDDINGS
+        )
+        val productRepository = InMemoryProducts(product)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val imageStorage = TrackingLocalImageStorage(context)
+        val fixture = context.resources.openRawResource(R.drawable.product_tapiz_aurora).use { it.readBytes() }
+        val registry = CameraCaptureRegistry(context, fixture)
+        val requests = EmptyRequests()
+        val captureDirectory = File(context.filesDir, "camera-captures")
+        val capturesBefore = captureDirectory.list()?.toSet().orEmpty()
+        var savedReference: String? = null
+
+        compose.setContent {
+            LouArayaTheme {
+                CompositionLocalProvider(LocalActivityResultRegistryOwner provides registry) {
+                    LouArayaNavHost(
+                        getProductsUseCase = GetProductsUseCase(productRepository),
+                        getProductByIdUseCase = GetProductByIdUseCase(productRepository),
+                        createCommercialRequestUseCase = CreateCommercialRequestUseCase(requests, productRepository),
+                        getCommercialRequestsUseCase = GetCommercialRequestsUseCase(requests),
+                        getCommercialRequestByIdUseCase = GetCommercialRequestByIdUseCase(requests),
+                        productImageStorage = imageStorage,
+                        updateProductImageUseCase = UpdateProductImageUseCase(productRepository, imageStorage)
+                    )
+                }
+            }
+        }
+
+        try {
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithTag("catalog-product-1").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Matrimonios").performClick().assertIsSelected()
+            compose.onNodeWithText("Administración (demo)").performClick()
+            compose.onNodeWithTag("edit-image-1").performClick()
+            compose.onNodeWithTag("take-product-photo").performScrollTo().performClick()
+            compose.waitUntil(5_000) { registry.cameraLaunchCount == 1 }
+
+            val launchedUri = requireNotNull(registry.lastCameraUri)
+            assertEquals("${context.packageName}.fileprovider", launchedUri.authority)
+            assertEquals("camera-captures", launchedUri.pathSegments.first())
+            assertNull("A photograph is not persisted before confirmation", productRepository.product.imageReference)
+            compose.onNodeWithTag("product-image-preview").assertIsDisplayed()
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithTag("save-product-image").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("save-product-image").performScrollTo().performClick()
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText("Imagen guardada.").fetchSemanticsNodes().isNotEmpty()
+            }
+
+            val persistedReference = requireNotNull(productRepository.product.imageReference)
+            savedReference = persistedReference
+            assertNotNull(imageStorage.loadFromReference(persistedReference, 512))
+            compose.onNodeWithText("Imagen guardada.").assertIsDisplayed()
+            compose.waitUntil(5_000) {
+                captureDirectory.list()?.toSet().orEmpty() == capturesBefore
+            }
+
+            compose.onNodeWithText("Volver a administración").performScrollTo().performClick()
+            compose.waitUntil(5_000) { imageStorage.loadedReferences.contains(persistedReference) }
+            imageStorage.loadedReferences.clear()
+            compose.onNodeWithContentDescription("Volver").performClick()
+            compose.onNodeWithText("Matrimonios").assertIsSelected()
+            compose.waitUntil(5_000) { imageStorage.loadedReferences.contains(persistedReference) }
+            imageStorage.loadedReferences.clear()
+            compose.onNodeWithTag("catalog-product-1").performClick()
+            compose.onNodeWithText("Detalle del producto").assertIsDisplayed()
+            compose.waitUntil(5_000) { imageStorage.loadedReferences.contains(persistedReference) }
+        } finally {
+            registry.lastCameraUri?.let { imageStorage.deleteCameraCapture(it.toString()) }
+            savedReference?.let { imageStorage.delete(it) }
+        }
+    }
+
     private class InMemoryProducts(initial: Product) : ProductRepository {
         var product = initial
         override suspend fun getProducts(): List<Product> = listOf(product)
@@ -266,6 +351,47 @@ class AdminProductNavigationTest {
                 dispatchResult(requestCode, Activity.RESULT_OK, Intent().setData(selected))
             }
         }
+    }
+
+    private class CameraCaptureRegistry(
+        private val context: Context,
+        private val captureBytes: ByteArray
+    ) : ActivityResultRegistry(), ActivityResultRegistryOwner {
+        @Volatile var lastCameraUri: Uri? = null
+        @Volatile var cameraLaunchCount = 0
+        override val activityResultRegistry: ActivityResultRegistry get() = this
+
+        override fun <I, O> onLaunch(
+            requestCode: Int,
+            contract: ActivityResultContract<I, O>,
+            input: I,
+            options: ActivityOptionsCompat?
+        ) {
+            assertTrue("Only the real camera capture contract is expected", contract is ActivityResultContracts.TakePicture)
+            val outputUri = input as Uri
+            lastCameraUri = outputUri
+            cameraLaunchCount++
+            requireNotNull(context.contentResolver.openOutputStream(outputUri)).use { it.write(captureBytes) }
+            dispatchResult(requestCode, Activity.RESULT_OK, Intent())
+        }
+    }
+
+    private class TrackingLocalImageStorage(context: Context) : ProductImageStorage {
+        private val delegate = LocalProductImageStorage(context)
+        val loadedReferences = CopyOnWriteArrayList<String>()
+
+        override suspend fun saveFromSource(sourceUri: String): String = delegate.saveFromSource(sourceUri)
+        override suspend fun loadFromReference(reference: String, maxDimensionPx: Int): ByteArray? {
+            loadedReferences += reference
+            return delegate.loadFromReference(reference, maxDimensionPx)
+        }
+        override suspend fun loadPreview(sourceUri: String, maxDimensionPx: Int): ByteArray? =
+            delegate.loadPreview(sourceUri, maxDimensionPx)
+        override suspend fun delete(reference: String) = delegate.delete(reference)
+        override suspend fun createCameraCaptureUri(): String = delegate.createCameraCaptureUri()
+        override suspend fun deleteCameraCapture(uri: String) = delegate.deleteCameraCapture(uri)
+        override suspend fun cleanupAbandonedCameraCaptures(preserveUris: Set<String>) =
+            delegate.cleanupAbandonedCameraCaptures(preserveUris)
     }
 
     private class EmptyRequests : CommercialRequestRepository {

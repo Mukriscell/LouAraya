@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.exifinterface.media.ExifInterface
+import androidx.core.content.FileProvider
 import cl.duoc.louaraya.R
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -99,6 +100,64 @@ class LocalProductImageStorageTest {
             storage.delete(reference)
         } finally {
             source.delete()
+        }
+        Unit
+    }
+
+    @Test
+    fun cameraCaptureUriIsScopedPreservedDuringCleanupAndSavedAsPrivateImage() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val storage = LocalProductImageStorage(context)
+        val activeUri = Uri.parse(storage.createCameraCaptureUri())
+        val abandonedUri = Uri.parse(storage.createCameraCaptureUri())
+        val captureDirectory = File(context.filesDir, "camera-captures")
+        val activeFile = File(captureDirectory, requireNotNull(activeUri.lastPathSegment))
+        val abandonedFile = File(captureDirectory, requireNotNull(abandonedUri.lastPathSegment))
+        val outsideFile = File(context.filesDir, "outside-camera-captures.jpg")
+
+        try {
+            assertEquals("content", activeUri.scheme)
+            assertEquals("${context.packageName}.fileprovider", activeUri.authority)
+            assertEquals(listOf("camera-captures", activeFile.name), activeUri.pathSegments)
+            assertTrue(activeFile.isFile)
+            assertTrue(abandonedFile.isFile)
+            assertTrue(outsideFile.createNewFile())
+            val outsideFileFailure = runCatching {
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.fileprovider",
+                    outsideFile
+                )
+            }.exceptionOrNull()
+            assertTrue("The FileProvider must reject files outside its configured directory", outsideFileFailure is IllegalArgumentException)
+
+            storage.cleanupAbandonedCameraCaptures(setOf(activeUri.toString()))
+            assertTrue("The active camera target must survive cleanup", activeFile.isFile)
+            assertTrue("An abandoned camera target must be removed", !abandonedFile.exists())
+
+            context.resources.openRawResource(R.drawable.product_tapiz_aurora).use { input ->
+                requireNotNull(context.contentResolver.openOutputStream(activeUri)).use(input::copyTo)
+            }
+            assertNotNull(storage.loadPreview(activeUri.toString(), 1600))
+
+            val reference = storage.saveFromSource(activeUri.toString())
+            val persisted = File(context.filesDir, reference)
+            assertTrue(persisted.isFile)
+            assertNotNull(LocalProductImageStorage(context).loadFromReference(reference, 1600))
+
+            storage.deleteCameraCapture(activeUri.toString())
+            assertTrue("Deleting a capture must remove only its temporary file", !activeFile.exists())
+            storage.delete(reference)
+
+            val protectedUri = Uri.parse(storage.createCameraCaptureUri())
+            val protectedFile = File(captureDirectory, requireNotNull(protectedUri.lastPathSegment))
+            storage.deleteCameraCapture("content://untrusted.example/camera-captures/${protectedFile.name}")
+            assertTrue("A foreign provider URI must not delete app files", protectedFile.isFile)
+            storage.deleteCameraCapture(protectedUri.toString())
+        } finally {
+            activeFile.delete()
+            abandonedFile.delete()
+            outsideFile.delete()
         }
         Unit
     }
