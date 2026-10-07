@@ -1,6 +1,7 @@
 package cl.duoc.louaraya.data.mapper
 
 import cl.duoc.louaraya.data.local.entity.ProductEntity
+import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 
 /**
@@ -12,7 +13,8 @@ fun ProductEntity.toDomain(): Product = Product(
     widthCm = widthCm,
     lengthCm = lengthCm,
     material = material,
-    price = price
+    price = price,
+    campaignCategory = CampaignCategory.valueOf(campaignCategory)
 )
 
 /**
@@ -24,5 +26,6 @@ fun Product.toEntity(): ProductEntity = ProductEntity(
     widthCm = widthCm,
     lengthCm = lengthCm,
     material = material,
-    price = price
+    price = price,
+    campaignCategory = campaignCategory.name
 )

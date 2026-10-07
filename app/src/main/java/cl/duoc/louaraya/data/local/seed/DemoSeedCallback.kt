@@ -30,15 +30,16 @@ class DemoSeedCallback : RoomDatabase.Callback() {
         try {
             DemoProductSeed.products.forEach { product ->
                 db.execSQL(
-                    "INSERT INTO products (id, name, width_cm, length_cm, material, price) " +
-                        "VALUES (?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO products (id, name, width_cm, length_cm, material, price, campaign_category) " +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?)",
                     arrayOf<Any>(
                         product.id,
                         product.name,
                         product.widthCm,
                         product.lengthCm,
                         product.material,
-                        product.price
+                        product.price,
+                        product.campaignCategory
                     )
                 )
             }

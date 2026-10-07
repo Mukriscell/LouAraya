@@ -19,7 +19,9 @@ interface CommercialRequestRepository {
     suspend fun getRequestById(id: Long): CommercialRequest?
 
     /**
-     * Registra una nueva solicitud y retorna la solicitud creada.
+     * Registra una nueva solicitud (id = 0) y retorna su identificador asignado.
+     * La generación local del ID pertenece a data, no al consumidor del contrato.
+     * La integración futura debe distinguir estos IDs locales de los IDs del servidor.
      */
     suspend fun createRequest(request: CommercialRequest): CommercialRequest
 

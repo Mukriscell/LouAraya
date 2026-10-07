@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import cl.duoc.louaraya.data.local.LouArayaDatabase
 import cl.duoc.louaraya.data.local.entity.ProductEntity
+import cl.duoc.louaraya.domain.model.CampaignCategory
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -30,7 +31,8 @@ class ProductDaoTest {
         widthCm = 60.0,
         lengthCm = 90.0,
         material = "Algodón",
-        price = 45000L
+        price = 45000L,
+        campaignCategory = CampaignCategory.INTERIOR_DECORATION.name
     )
 
     private val colgante = ProductEntity(
@@ -39,7 +41,8 @@ class ProductDaoTest {
         widthCm = 30.0,
         lengthCm = 50.0,
         material = "Yute",
-        price = 25000L
+        price = 25000L,
+        campaignCategory = CampaignCategory.FESTIVALS.name
     )
 
     private val cortina = ProductEntity(
@@ -48,7 +51,8 @@ class ProductDaoTest {
         widthCm = 120.0,
         lengthCm = 200.0,
         material = "Algodón reciclado",
-        price = 98000L
+        price = 98000L,
+        campaignCategory = CampaignCategory.WEDDINGS.name
     )
 
     @Before

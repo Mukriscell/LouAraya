@@ -13,6 +13,18 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
 import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
+import cl.duoc.louaraya.domain.usecase.CreateCommercialRequestUseCase
+import cl.duoc.louaraya.domain.usecase.GetCommercialRequestsUseCase
+import cl.duoc.louaraya.domain.usecase.GetCommercialRequestByIdUseCase
+import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestScreen
+import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestViewModel
+import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestViewModelFactory
+import cl.duoc.louaraya.presentation.requests.CommercialRequestsScreen
+import cl.duoc.louaraya.presentation.requests.CommercialRequestsViewModel
+import cl.duoc.louaraya.presentation.requests.CommercialRequestsViewModelFactory
+import cl.duoc.louaraya.presentation.requestdetail.CommercialRequestDetailScreen
+import cl.duoc.louaraya.presentation.requestdetail.CommercialRequestDetailViewModel
+import cl.duoc.louaraya.presentation.requestdetail.CommercialRequestDetailViewModelFactory
 import cl.duoc.louaraya.presentation.catalog.CatalogScreen
 import cl.duoc.louaraya.presentation.catalog.CatalogViewModel
 import cl.duoc.louaraya.presentation.catalog.CatalogViewModelFactory
@@ -27,8 +39,14 @@ object LouArayaRoutes {
     const val CATALOG = "catalog"
     const val PRODUCT_ID_ARG = "productId"
     const val PRODUCT_DETAIL = "product/{$PRODUCT_ID_ARG}"
+    const val CREATE_REQUEST = "product/{$PRODUCT_ID_ARG}/request"
+    const val REQUESTS = "requests"
+    const val REQUEST_ID_ARG = "requestId"
+    const val REQUEST_DETAIL = "requests/{$REQUEST_ID_ARG}"
 
     fun productDetail(productId: Long): String = "product/$productId"
+    fun createRequest(productId: Long): String = "product/$productId/request"
+    fun requestDetail(requestId: Long): String = "requests/$requestId"
 }
 
 /**
@@ -41,6 +59,9 @@ object LouArayaRoutes {
 fun LouArayaNavHost(
     getProductsUseCase: GetProductsUseCase,
     getProductByIdUseCase: GetProductByIdUseCase,
+    createCommercialRequestUseCase: CreateCommercialRequestUseCase,
+    getCommercialRequestsUseCase: GetCommercialRequestsUseCase,
+    getCommercialRequestByIdUseCase: GetCommercialRequestByIdUseCase,
     modifier: Modifier = Modifier
 ) {
     val navController = rememberNavController()
@@ -60,6 +81,7 @@ fun LouArayaNavHost(
                     onProductClick = { productId ->
                         navController.navigate(LouArayaRoutes.productDetail(productId))
                     },
+                    onViewRequests = { navController.navigate(LouArayaRoutes.REQUESTS) },
                     modifier = Modifier.padding(innerPadding)
                 )
             }
@@ -78,7 +100,59 @@ fun LouArayaNavHost(
             )
             ProductDetailScreen(
                 viewModel = detailViewModel,
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onCreateRequest = { navController.navigate(LouArayaRoutes.createRequest(it)) }
+            )
+        }
+
+        composable(
+            route = LouArayaRoutes.CREATE_REQUEST,
+            arguments = listOf(navArgument(LouArayaRoutes.PRODUCT_ID_ARG) { type = NavType.LongType })
+        ) { entry ->
+            val productId = requireNotNull(entry.arguments).getLong(LouArayaRoutes.PRODUCT_ID_ARG)
+            val createViewModel: CreateCommercialRequestViewModel = viewModel(
+                factory = CreateCommercialRequestViewModelFactory(
+                    productId, getProductByIdUseCase, createCommercialRequestUseCase
+                )
+            )
+            CreateCommercialRequestScreen(
+                viewModel = createViewModel,
+                onBack = { navController.popBackStack() },
+                onViewRequests = {
+                    navController.navigate(LouArayaRoutes.REQUESTS) {
+                        // El formulario completado no reaparece al volver desde el listado.
+                        popUpTo(LouArayaRoutes.CATALOG)
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
+
+        composable(LouArayaRoutes.REQUESTS) {
+            val requestsViewModel: CommercialRequestsViewModel = viewModel(
+                factory = CommercialRequestsViewModelFactory(getCommercialRequestsUseCase)
+            )
+            CommercialRequestsScreen(
+                viewModel = requestsViewModel,
+                onBack = { navController.popBackStack() },
+                onRequestClick = { navController.navigate(LouArayaRoutes.requestDetail(it)) }
+            )
+        }
+
+        composable(
+            route = LouArayaRoutes.REQUEST_DETAIL,
+            arguments = listOf(navArgument(LouArayaRoutes.REQUEST_ID_ARG) { type = NavType.LongType })
+        ) { entry ->
+            val requestId = requireNotNull(entry.arguments).getLong(LouArayaRoutes.REQUEST_ID_ARG)
+            val requestViewModel: CommercialRequestDetailViewModel = viewModel(
+                factory = CommercialRequestDetailViewModelFactory(
+                    requestId, getCommercialRequestByIdUseCase, getProductByIdUseCase
+                )
+            )
+            CommercialRequestDetailScreen(
+                viewModel = requestViewModel,
+                onBack = { navController.popBackStack() },
+                onProductClick = { navController.navigate(LouArayaRoutes.productDetail(it)) }
             )
         }
     }

@@ -17,7 +17,10 @@ class MainActivity : ComponentActivity() {
             LouArayaTheme {
                 LouArayaNavHost(
                     getProductsUseCase = container.getProductsUseCase,
-                    getProductByIdUseCase = container.getProductByIdUseCase
+                    getProductByIdUseCase = container.getProductByIdUseCase,
+                    createCommercialRequestUseCase = container.createCommercialRequestUseCase,
+                    getCommercialRequestsUseCase = container.getCommercialRequestsUseCase,
+                    getCommercialRequestByIdUseCase = container.getCommercialRequestByIdUseCase
                 )
             }
         }

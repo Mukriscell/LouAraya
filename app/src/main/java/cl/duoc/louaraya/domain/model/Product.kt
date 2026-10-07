@@ -9,6 +9,7 @@ package cl.duoc.louaraya.domain.model
  * @property lengthCm largo en centímetros.
  * @property material tipo de material (por ejemplo, algodón o cáñamo).
  * @property price precio ficticio en pesos chilenos (CLP, sin decimales).
+ * @property campaignCategory campaña oficial asociada a la pieza.
  */
 data class Product(
     val id: Long,
@@ -16,5 +17,6 @@ data class Product(
     val widthCm: Double,
     val lengthCm: Double,
     val material: String,
-    val price: Long
+    val price: Long,
+    val campaignCategory: CampaignCategory
 )

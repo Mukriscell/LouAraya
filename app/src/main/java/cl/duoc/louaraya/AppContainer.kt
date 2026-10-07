@@ -4,6 +4,13 @@ import android.content.Context
 import androidx.room.Room
 import cl.duoc.louaraya.data.local.LouArayaDatabase
 import cl.duoc.louaraya.data.local.seed.DemoSeedCallback
+import cl.duoc.louaraya.data.local.migration.MIGRATION_1_2
+import cl.duoc.louaraya.data.local.migration.MIGRATION_2_3
+import cl.duoc.louaraya.data.repository.CommercialRequestRepositoryImpl
+import cl.duoc.louaraya.domain.repository.CommercialRequestRepository
+import cl.duoc.louaraya.domain.usecase.CreateCommercialRequestUseCase
+import cl.duoc.louaraya.domain.usecase.GetCommercialRequestsUseCase
+import cl.duoc.louaraya.domain.usecase.GetCommercialRequestByIdUseCase
 import cl.duoc.louaraya.data.repository.ProductRepositoryImpl
 import cl.duoc.louaraya.domain.repository.ProductRepository
 import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
@@ -24,6 +31,7 @@ class AppContainer(context: Context) {
             DATABASE_NAME
         )
             .addCallback(DemoSeedCallback())
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -37,6 +45,22 @@ class AppContainer(context: Context) {
 
     val getProductByIdUseCase: GetProductByIdUseCase by lazy {
         GetProductByIdUseCase(productRepository)
+    }
+
+    private val commercialRequestRepository: CommercialRequestRepository by lazy {
+        CommercialRequestRepositoryImpl(database.commercialRequestDao())
+    }
+
+    val createCommercialRequestUseCase: CreateCommercialRequestUseCase by lazy {
+        CreateCommercialRequestUseCase(commercialRequestRepository, productRepository)
+    }
+
+    val getCommercialRequestsUseCase: GetCommercialRequestsUseCase by lazy {
+        GetCommercialRequestsUseCase(commercialRequestRepository)
+    }
+
+    val getCommercialRequestByIdUseCase: GetCommercialRequestByIdUseCase by lazy {
+        GetCommercialRequestByIdUseCase(commercialRequestRepository)
     }
 
     private companion object {

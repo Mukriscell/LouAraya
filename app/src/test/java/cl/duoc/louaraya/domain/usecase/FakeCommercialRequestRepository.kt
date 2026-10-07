@@ -19,8 +19,10 @@ class FakeCommercialRequestRepository(
         requests.firstOrNull { it.id == id }
 
     override suspend fun createRequest(request: CommercialRequest): CommercialRequest {
-        requests.add(request)
-        return request
+        require(request.id == 0L)
+        val saved = request.copy(id = (requests.maxOfOrNull { it.id } ?: 0L) + 1)
+        requests.add(saved)
+        return saved
     }
 
     override suspend fun updateRequestStatus(
@@ -28,6 +30,7 @@ class FakeCommercialRequestRepository(
         status: RequestStatus
     ): CommercialRequest {
         val index = requests.indexOfFirst { it.id == id }
+        if (index == -1) throw NoSuchElementException("La solicitud no existe.")
         val updated = requests[index].copy(status = status)
         requests[index] = updated
         return updated

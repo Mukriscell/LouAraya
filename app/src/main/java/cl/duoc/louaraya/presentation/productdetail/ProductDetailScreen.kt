@@ -32,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duoc.louaraya.R
+import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
@@ -47,6 +48,7 @@ import cl.duoc.louaraya.ui.theme.LouArayaTheme
 fun ProductDetailScreen(
     viewModel: ProductDetailViewModel,
     onBack: () -> Unit,
+    onCreateRequest: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -54,6 +56,7 @@ fun ProductDetailScreen(
         uiState = uiState,
         onBack = onBack,
         onRetry = viewModel::loadProduct,
+        onCreateRequest = onCreateRequest,
         modifier = modifier
     )
 }
@@ -67,6 +70,7 @@ fun ProductDetailContent(
     uiState: ProductDetailUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
+    onCreateRequest: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -116,6 +120,7 @@ fun ProductDetailContent(
 
             is ProductDetailUiState.Success -> ProductDetail(
                 product = uiState.product,
+                onCreateRequest = { onCreateRequest(uiState.product.id) },
                 modifier = contentModifier
             )
         }
@@ -125,6 +130,7 @@ fun ProductDetailContent(
 @Composable
 private fun ProductDetail(
     product: Product,
+    onCreateRequest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -147,10 +153,15 @@ private fun ProductDetail(
             Column(modifier = Modifier.padding(16.dp)) {
                 DetailRow(label = "Material", value = product.material)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                DetailRow(label = "Campaña", value = product.campaignCategory.displayName)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 DetailRow(label = "Ancho", value = "${formatCm(product.widthCm)} cm")
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 DetailRow(label = "Largo", value = "${formatCm(product.lengthCm)} cm")
             }
+        }
+        Button(onClick = onCreateRequest, modifier = Modifier.fillMaxWidth()) {
+            Text("Solicitar compra o reserva")
         }
     }
 }
@@ -194,10 +205,19 @@ private fun ProductDetailContentPreview() {
     LouArayaTheme {
         ProductDetailContent(
             uiState = ProductDetailUiState.Success(
-                Product(1L, "Tapiz Preview", 60.0, 90.0, "Algodón", 45000L)
+                Product(
+                    1L,
+                    "Tapiz Preview",
+                    60.0,
+                    90.0,
+                    "Algodón",
+                    45000L,
+                    CampaignCategory.INTERIOR_DECORATION
+                )
             ),
             onBack = {},
-            onRetry = {}
+            onRetry = {},
+            onCreateRequest = {}
         )
     }
 }

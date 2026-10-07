@@ -1,6 +1,7 @@
 package cl.duoc.louaraya.data.mapper
 
 import cl.duoc.louaraya.data.local.entity.ProductEntity
+import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -13,7 +14,8 @@ class ProductMapperTest {
         widthCm = 60.5,
         lengthCm = 90.25,
         material = "Algodón",
-        price = 45000L
+        price = 45000L,
+        campaignCategory = CampaignCategory.INTERIOR_DECORATION.name
     )
 
     private val product = Product(
@@ -22,7 +24,8 @@ class ProductMapperTest {
         widthCm = 60.5,
         lengthCm = 90.25,
         material = "Algodón",
-        price = 45000L
+        price = 45000L,
+        campaignCategory = CampaignCategory.INTERIOR_DECORATION
     )
 
     @Test
@@ -38,5 +41,13 @@ class ProductMapperTest {
     @Test
     fun roundTrip_preservesProduct() {
         assertEquals(product, product.toEntity().toDomain())
+    }
+
+    @Test
+    fun roundTripPreservesEveryOfficialCategory() {
+        CampaignCategory.entries.forEach { category ->
+            val categorizedProduct = product.copy(campaignCategory = category)
+            assertEquals(categorizedProduct, categorizedProduct.toEntity().toDomain())
+        }
     }
 }
