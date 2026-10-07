@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,12 +32,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import cl.duoc.louaraya.domain.image.ProductImageStorage
 import cl.duoc.louaraya.R
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 import cl.duoc.louaraya.presentation.common.AdaptiveContentContainer
 import cl.duoc.louaraya.presentation.common.LouArayaContentWidths
 import cl.duoc.louaraya.presentation.common.LouArayaWindowSizeClass
+import cl.duoc.louaraya.presentation.common.ProductImage
 import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
@@ -53,7 +57,8 @@ fun ProductDetailScreen(
     onBack: () -> Unit,
     onCreateRequest: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT,
+    imageStorage: ProductImageStorage? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ProductDetailContent(
@@ -62,7 +67,8 @@ fun ProductDetailScreen(
         onRetry = viewModel::loadProduct,
         onCreateRequest = onCreateRequest,
         modifier = modifier,
-        windowSizeClass = windowSizeClass
+        windowSizeClass = windowSizeClass,
+        imageStorage = imageStorage
     )
 }
 
@@ -77,7 +83,8 @@ fun ProductDetailContent(
     onRetry: () -> Unit,
     onCreateRequest: (Long) -> Unit,
     modifier: Modifier = Modifier,
-    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT,
+    imageStorage: ProductImageStorage? = null
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -130,6 +137,7 @@ fun ProductDetailContent(
 
                 is ProductDetailUiState.Success -> ProductDetail(
                     product = uiState.product,
+                    imageStorage = imageStorage,
                     onCreateRequest = { onCreateRequest(uiState.product.id) },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -141,6 +149,7 @@ fun ProductDetailContent(
 @Composable
 private fun ProductDetail(
     product: Product,
+    imageStorage: ProductImageStorage?,
     onCreateRequest: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -151,6 +160,15 @@ private fun ProductDetail(
             .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ProductImage(
+            productId = product.id,
+            imageReference = product.imageReference,
+            storage = imageStorage,
+            modifier = Modifier.fillMaxWidth().aspectRatio(1.15f),
+            contentDescription = "Imagen de ${product.name}",
+            contentScale = ContentScale.Fit,
+            testTag = "product-image-${product.id}"
+        )
         Text(
             text = product.name,
             style = MaterialTheme.typography.headlineMedium

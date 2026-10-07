@@ -71,6 +71,22 @@ class ProductDetailViewModelTest {
         assertEquals(ProductDetailUiState.Error("Error de lectura"), viewModel.uiState.value)
     }
 
+    @Test
+    fun reloadReflectsImageUpdatedInAdministration() = runTest(testDispatcher) {
+        var product = TestData.product1
+        val repository = object : ProductRepository by FakeProductRepository(listOf(product)) {
+            override suspend fun getProductById(id: Long): Product? = product.takeIf { it.id == id }
+        }
+        val viewModel = createViewModel(product.id, repository)
+        advanceUntilIdle()
+        product = product.copy(imageReference = "product-images/admin.jpg")
+
+        viewModel.loadProduct()
+        advanceUntilIdle()
+
+        assertEquals(ProductDetailUiState.Success(product), viewModel.uiState.value)
+    }
+
     private fun createViewModel(productId: Long, repository: ProductRepository) =
         ProductDetailViewModel(productId, GetProductByIdUseCase(repository))
 
@@ -85,6 +101,9 @@ class ProductDetailViewModelTest {
             throw IllegalStateException(message)
 
         override suspend fun getProductById(id: Long): Product? =
+            throw IllegalStateException(message)
+
+        override suspend fun updateImageReference(id: Long, imageReference: String): Boolean =
             throw IllegalStateException(message)
     }
 }

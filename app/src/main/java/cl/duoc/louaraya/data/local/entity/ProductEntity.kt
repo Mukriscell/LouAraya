@@ -23,5 +23,7 @@ data class ProductEntity(
     @ColumnInfo(name = "price")
     val price: Long,
     @ColumnInfo(name = "campaign_category", defaultValue = "'INTERIOR_DECORATION'")
-    val campaignCategory: String
+    val campaignCategory: String,
+    @ColumnInfo(name = "image_reference")
+    val imageReference: String? = null
 )

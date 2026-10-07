@@ -14,7 +14,8 @@ fun ProductEntity.toDomain(): Product = Product(
     lengthCm = lengthCm,
     material = material,
     price = price,
-    campaignCategory = CampaignCategory.valueOf(campaignCategory)
+    campaignCategory = CampaignCategory.valueOf(campaignCategory),
+    imageReference = imageReference
 )
 
 /**
@@ -27,5 +28,6 @@ fun Product.toEntity(): ProductEntity = ProductEntity(
     lengthCm = lengthCm,
     material = material,
     price = price,
-    campaignCategory = campaignCategory.name
+    campaignCategory = campaignCategory.name,
+    imageReference = imageReference
 )

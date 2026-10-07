@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 /**
@@ -20,14 +21,16 @@ class ProductDetailViewModel(
 
     private val _uiState = MutableStateFlow<ProductDetailUiState>(ProductDetailUiState.Loading)
     val uiState: StateFlow<ProductDetailUiState> = _uiState.asStateFlow()
+    private var loadJob: Job? = null
 
     init {
         loadProduct()
     }
 
     fun loadProduct() {
+        loadJob?.cancel()
         _uiState.value = ProductDetailUiState.Loading
-        viewModelScope.launch {
+        loadJob = viewModelScope.launch {
             _uiState.value = try {
                 val product = getProductByIdUseCase(productId)
                 if (product == null) {

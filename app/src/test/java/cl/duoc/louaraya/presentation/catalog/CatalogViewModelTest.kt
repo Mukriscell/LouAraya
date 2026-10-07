@@ -153,6 +153,29 @@ class CatalogViewModelTest {
         assertEquals(CatalogUiState.Success(listOf(TestData.product3)), viewModel.uiState.value)
     }
 
+    @Test
+    fun refreshAfterAdministrationKeepsFilterAndShowsUpdatedImageReference() = runTest(testDispatcher) {
+        var current = demoProducts
+        val repository = object : ProductRepository by FakeProductRepository() {
+            override suspend fun getProducts(): List<Product> = current
+        }
+        val viewModel = createViewModel(repository)
+        advanceUntilIdle()
+        viewModel.selectCategory(CampaignCategory.WEDDINGS)
+        current = demoProducts.map { product ->
+            if (product.id == TestData.product3.id) product.copy(imageReference = "product-images/admin.jpg") else product
+        }
+
+        viewModel.loadProducts()
+        advanceUntilIdle()
+
+        assertEquals(CampaignCategory.WEDDINGS, viewModel.selectedCategory.value)
+        assertEquals(
+            CatalogUiState.Success(listOf(TestData.product3.copy(imageReference = "product-images/admin.jpg"))),
+            viewModel.uiState.value
+        )
+    }
+
     private class MutableProductRepository(
         private val products: List<Product>,
         var shouldFail: Boolean = false
@@ -163,5 +186,7 @@ class CatalogViewModelTest {
 
         override suspend fun getProductById(id: Long): Product? =
             products.firstOrNull { it.id == id }
+
+        override suspend fun updateImageReference(id: Long, imageReference: String): Boolean = false
     }
 }

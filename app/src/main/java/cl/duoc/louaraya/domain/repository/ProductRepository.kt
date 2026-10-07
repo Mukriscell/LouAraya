@@ -16,4 +16,7 @@ interface ProductRepository {
      * Obtiene un producto por su identificador, o null si no existe.
      */
     suspend fun getProductById(id: Long): Product?
+
+    /** Replaces only the optional private image reference; false means no product matched. */
+    suspend fun updateImageReference(id: Long, imageReference: String): Boolean
 }

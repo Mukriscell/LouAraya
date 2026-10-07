@@ -26,7 +26,7 @@ class Migration2To3Test {
         try {
             createVersion2Database(file)
             val migrated = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                 .build()
             try {
                 val products = migrated.productDao().getAll().associateBy { it.id }
@@ -47,7 +47,7 @@ class Migration2To3Test {
             }
 
             val reopened = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                 .build()
             try {
                 assertEquals(

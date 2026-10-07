@@ -20,7 +20,9 @@ class MainActivity : ComponentActivity() {
                     getProductByIdUseCase = container.getProductByIdUseCase,
                     createCommercialRequestUseCase = container.createCommercialRequestUseCase,
                     getCommercialRequestsUseCase = container.getCommercialRequestsUseCase,
-                    getCommercialRequestByIdUseCase = container.getCommercialRequestByIdUseCase
+                    getCommercialRequestByIdUseCase = container.getCommercialRequestByIdUseCase,
+                    productImageStorage = container.productImageStorage,
+                    updateProductImageUseCase = container.updateProductImageUseCase
                 )
             }
         }

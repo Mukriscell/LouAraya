@@ -12,11 +12,16 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.Modifier
+import cl.duoc.louaraya.domain.image.ProductImageStorage
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.CommercialRequest
 import cl.duoc.louaraya.domain.model.Product
@@ -26,6 +31,7 @@ import cl.duoc.louaraya.presentation.catalog.CatalogContent
 import cl.duoc.louaraya.presentation.catalog.CatalogUiState
 import cl.duoc.louaraya.presentation.common.ADAPTIVE_CONTENT_TEST_TAG
 import cl.duoc.louaraya.presentation.common.currentLouArayaWindowSizeClass
+import cl.duoc.louaraya.presentation.common.ProductImage
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestContent
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestUiState
 import cl.duoc.louaraya.presentation.productdetail.ProductDetailContent
@@ -44,6 +50,38 @@ import org.junit.Test
 class AdaptiveScreensTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @Test
+    fun missingOrCorruptImagesFallBackAndBadPreviewIsNotMisrepresented() {
+        val brokenStorage = object : ProductImageStorage {
+            override suspend fun saveFromSource(sourceUri: String): String = error("unused")
+            override suspend fun loadFromReference(reference: String, maxDimensionPx: Int): ByteArray? = null
+            override suspend fun loadPreview(sourceUri: String, maxDimensionPx: Int): ByteArray? = null
+            override suspend fun delete(reference: String) = Unit
+        }
+        compose.setContent {
+            LouArayaTheme {
+                androidx.compose.foundation.layout.Column {
+                    ProductImage(1L, "product-images/missing.jpg", brokenStorage,
+                        Modifier.size(120.dp), "Demo fallback", testTag = "broken-product-image")
+                    ProductImage(99L, null, null,
+                        Modifier.size(120.dp), "Unknown fallback", testTag = "unknown-product-image")
+                    ProductImage(1L, null, brokenStorage,
+                        Modifier.size(120.dp), "Invalid preview", previewSourceUri = "content://invalid",
+                        testTag = "invalid-preview-image")
+                }
+            }
+        }
+
+        compose.onNodeWithTag("broken-product-image").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Demo fallback").assertIsDisplayed()
+        compose.onNodeWithText("Imagen no disponible").assertIsDisplayed()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("No se pudo previsualizar. Elige otra imagen.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("No se pudo previsualizar. Elige otra imagen.").assertIsDisplayed()
+    }
 
     @Test
     fun catalogRecomposesGridForWindowSizeAndPreservesFiltersAndProductNavigation() {

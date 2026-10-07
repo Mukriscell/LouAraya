@@ -17,4 +17,7 @@ class ProductRepositoryImpl(
 
     override suspend fun getProductById(id: Long): Product? =
         productDao.getById(id)?.toDomain()
+
+    override suspend fun updateImageReference(id: Long, imageReference: String): Boolean =
+        productDao.updateImageReference(id, imageReference) > 0
 }

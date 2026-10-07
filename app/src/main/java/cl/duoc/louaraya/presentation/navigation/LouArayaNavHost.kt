@@ -16,6 +16,13 @@ import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
 import cl.duoc.louaraya.domain.usecase.CreateCommercialRequestUseCase
 import cl.duoc.louaraya.domain.usecase.GetCommercialRequestsUseCase
 import cl.duoc.louaraya.domain.usecase.GetCommercialRequestByIdUseCase
+import cl.duoc.louaraya.domain.image.ProductImageStorage
+import cl.duoc.louaraya.domain.usecase.UpdateProductImageUseCase
+import cl.duoc.louaraya.presentation.admin.AdminProductCatalogScreen
+import cl.duoc.louaraya.presentation.admin.AdminProductImageScreen
+import cl.duoc.louaraya.presentation.admin.AdminProductImageViewModel
+import cl.duoc.louaraya.presentation.admin.AdminProductImageViewModelFactory
+import cl.duoc.louaraya.presentation.common.RefreshOnReturn
 import cl.duoc.louaraya.presentation.common.currentLouArayaWindowSizeClass
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestScreen
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestViewModel
@@ -42,12 +49,16 @@ object LouArayaRoutes {
     const val PRODUCT_DETAIL = "product/{$PRODUCT_ID_ARG}"
     const val CREATE_REQUEST = "product/{$PRODUCT_ID_ARG}/request"
     const val REQUESTS = "requests"
+    const val ADMIN_PRODUCTS = "admin/products"
+    const val ADMIN_PRODUCT_ID_ARG = "adminProductId"
+    const val ADMIN_EDIT_IMAGE = "admin/product/{$ADMIN_PRODUCT_ID_ARG}/image"
     const val REQUEST_ID_ARG = "requestId"
     const val REQUEST_DETAIL = "requests/{$REQUEST_ID_ARG}"
 
     fun productDetail(productId: Long): String = "product/$productId"
     fun createRequest(productId: Long): String = "product/$productId/request"
     fun requestDetail(requestId: Long): String = "requests/$requestId"
+    fun adminEditImage(productId: Long): String = "admin/product/$productId/image"
 }
 
 /**
@@ -63,6 +74,8 @@ fun LouArayaNavHost(
     createCommercialRequestUseCase: CreateCommercialRequestUseCase,
     getCommercialRequestsUseCase: GetCommercialRequestsUseCase,
     getCommercialRequestByIdUseCase: GetCommercialRequestByIdUseCase,
+    productImageStorage: ProductImageStorage,
+    updateProductImageUseCase: UpdateProductImageUseCase,
     modifier: Modifier = Modifier
 ) {
     val windowSizeClass = currentLouArayaWindowSizeClass()
@@ -77,6 +90,7 @@ fun LouArayaNavHost(
             val catalogViewModel: CatalogViewModel = viewModel(
                 factory = CatalogViewModelFactory(getProductsUseCase)
             )
+            RefreshOnReturn(catalogViewModel::loadProducts)
             Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                 CatalogScreen(
                     viewModel = catalogViewModel,
@@ -85,7 +99,9 @@ fun LouArayaNavHost(
                     },
                     onViewRequests = { navController.navigate(LouArayaRoutes.REQUESTS) },
                     modifier = Modifier.padding(innerPadding),
-                    windowSizeClass = windowSizeClass
+                    windowSizeClass = windowSizeClass,
+                    imageStorage = productImageStorage,
+                    onAdmin = { navController.navigate(LouArayaRoutes.ADMIN_PRODUCTS) }
                 )
             }
         }
@@ -101,11 +117,13 @@ fun LouArayaNavHost(
             val detailViewModel: ProductDetailViewModel = viewModel(
                 factory = ProductDetailViewModelFactory(productId, getProductByIdUseCase)
             )
+            RefreshOnReturn(detailViewModel::loadProduct)
             ProductDetailScreen(
                 viewModel = detailViewModel,
                 onBack = { navController.popBackStack() },
                 onCreateRequest = { navController.navigate(LouArayaRoutes.createRequest(it)) },
-                windowSizeClass = windowSizeClass
+                windowSizeClass = windowSizeClass,
+                imageStorage = productImageStorage
             )
         }
 
@@ -141,6 +159,38 @@ fun LouArayaNavHost(
                 viewModel = requestsViewModel,
                 onBack = { navController.popBackStack() },
                 onRequestClick = { navController.navigate(LouArayaRoutes.requestDetail(it)) },
+                windowSizeClass = windowSizeClass
+            )
+        }
+
+        composable(LouArayaRoutes.ADMIN_PRODUCTS) {
+            val adminCatalogViewModel: CatalogViewModel = viewModel(
+                factory = CatalogViewModelFactory(getProductsUseCase)
+            )
+            RefreshOnReturn(adminCatalogViewModel::loadProducts)
+            AdminProductCatalogScreen(
+                viewModel = adminCatalogViewModel,
+                imageStorage = productImageStorage,
+                onBack = { navController.popBackStack() },
+                onSelectProduct = { navController.navigate(LouArayaRoutes.adminEditImage(it)) },
+                windowSizeClass = windowSizeClass
+            )
+        }
+
+        composable(
+            route = LouArayaRoutes.ADMIN_EDIT_IMAGE,
+            arguments = listOf(navArgument(LouArayaRoutes.ADMIN_PRODUCT_ID_ARG) { type = NavType.LongType })
+        ) { entry ->
+            val productId = requireNotNull(entry.arguments).getLong(LouArayaRoutes.ADMIN_PRODUCT_ID_ARG)
+            val imageViewModel: AdminProductImageViewModel = viewModel(
+                factory = AdminProductImageViewModelFactory(
+                    productId, getProductByIdUseCase, updateProductImageUseCase
+                )
+            )
+            AdminProductImageScreen(
+                viewModel = imageViewModel,
+                imageStorage = productImageStorage,
+                onBack = { navController.popBackStack() },
                 windowSizeClass = windowSizeClass
             )
         }

@@ -54,7 +54,7 @@ class Migration1To2Test {
             var purchaseId = 0L
             var reservationId = 0L
             val migrated = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
             try {
                 val product = migrated.productDao().getById(42)
                 assertEquals("Pieza ficticia conservada", product?.name)
@@ -67,7 +67,7 @@ class Migration1To2Test {
                 migrated.close()
             }
             val reopened = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3).build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
             try {
                 assertEquals(purchase.copy(id = purchaseId), reopened.commercialRequestDao().getById(purchaseId))
                 assertEquals(reservation.copy(id = reservationId), reopened.commercialRequestDao().getById(reservationId))

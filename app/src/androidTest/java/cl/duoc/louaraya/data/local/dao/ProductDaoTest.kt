@@ -123,4 +123,14 @@ class ProductDaoTest {
 
         assertTrue(productDao.getAll().isEmpty())
     }
+
+    @Test
+    fun imageUpdateChangesOnlyImageReference() = runBlocking {
+        productDao.insertAll(listOf(tapiz, colgante))
+
+        assertEquals(1, productDao.updateImageReference(1L, "product-images/demo.jpg"))
+        assertEquals(tapiz.copy(imageReference = "product-images/demo.jpg"), productDao.getById(1L))
+        assertEquals(colgante, productDao.getById(2L))
+        assertEquals(0, productDao.updateImageReference(99L, "product-images/missing.jpg"))
+    }
 }

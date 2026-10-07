@@ -6,6 +6,9 @@ import cl.duoc.louaraya.data.local.LouArayaDatabase
 import cl.duoc.louaraya.data.local.seed.DemoSeedCallback
 import cl.duoc.louaraya.data.local.migration.MIGRATION_1_2
 import cl.duoc.louaraya.data.local.migration.MIGRATION_2_3
+import cl.duoc.louaraya.data.local.migration.MIGRATION_3_4
+import cl.duoc.louaraya.data.image.LocalProductImageStorage
+import cl.duoc.louaraya.domain.image.ProductImageStorage
 import cl.duoc.louaraya.data.repository.CommercialRequestRepositoryImpl
 import cl.duoc.louaraya.domain.repository.CommercialRequestRepository
 import cl.duoc.louaraya.domain.usecase.CreateCommercialRequestUseCase
@@ -15,6 +18,7 @@ import cl.duoc.louaraya.data.repository.ProductRepositoryImpl
 import cl.duoc.louaraya.domain.repository.ProductRepository
 import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
 import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
+import cl.duoc.louaraya.domain.usecase.UpdateProductImageUseCase
 
 /**
  * Composición manual de dependencias de la aplicación.
@@ -31,7 +35,7 @@ class AppContainer(context: Context) {
             DATABASE_NAME
         )
             .addCallback(DemoSeedCallback())
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
     }
 
@@ -45,6 +49,14 @@ class AppContainer(context: Context) {
 
     val getProductByIdUseCase: GetProductByIdUseCase by lazy {
         GetProductByIdUseCase(productRepository)
+    }
+
+    val productImageStorage: ProductImageStorage by lazy {
+        LocalProductImageStorage(context.applicationContext)
+    }
+
+    val updateProductImageUseCase: UpdateProductImageUseCase by lazy {
+        UpdateProductImageUseCase(productRepository, productImageStorage)
     }
 
     private val commercialRequestRepository: CommercialRequestRepository by lazy {

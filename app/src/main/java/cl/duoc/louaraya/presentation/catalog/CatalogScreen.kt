@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,11 +32,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
+import cl.duoc.louaraya.domain.image.ProductImageStorage
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 import cl.duoc.louaraya.presentation.common.AdaptiveContentContainer
 import cl.duoc.louaraya.presentation.common.LouArayaContentWidths
 import cl.duoc.louaraya.presentation.common.LouArayaWindowSizeClass
+import cl.duoc.louaraya.presentation.common.ProductImage
 import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
@@ -52,7 +56,9 @@ fun CatalogScreen(
     onProductClick: (Long) -> Unit,
     onViewRequests: () -> Unit,
     modifier: Modifier = Modifier,
-    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT,
+    imageStorage: ProductImageStorage? = null,
+    onAdmin: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
@@ -64,7 +70,9 @@ fun CatalogScreen(
         onProductClick = onProductClick,
         onViewRequests = onViewRequests,
         modifier = modifier,
-        windowSizeClass = windowSizeClass
+        windowSizeClass = windowSizeClass,
+        imageStorage = imageStorage,
+        onAdmin = onAdmin
     )
 }
 
@@ -80,7 +88,9 @@ fun CatalogContent(
     onProductClick: (Long) -> Unit,
     onViewRequests: () -> Unit,
     modifier: Modifier = Modifier,
-    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT,
+    imageStorage: ProductImageStorage? = null,
+    onAdmin: () -> Unit = {}
 ) {
     AdaptiveContentContainer(
         windowSizeClass = windowSizeClass,
@@ -88,17 +98,18 @@ fun CatalogContent(
         modifier = modifier
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Catálogo",
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                TextButton(onClick = onViewRequests) { Text("Solicitudes") }
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Catálogo", modifier = Modifier.weight(1f), style = MaterialTheme.typography.headlineMedium)
+                    TextButton(onClick = onViewRequests) { Text("Solicitudes") }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onAdmin) { Text("Administración (demo)") }
+                }
             }
             LazyRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -155,6 +166,7 @@ fun CatalogContent(
                 is CatalogUiState.Success -> ProductList(
                     products = uiState.products,
                     windowSizeClass = windowSizeClass,
+                    imageStorage = imageStorage,
                     onProductClick = onProductClick,
                     modifier = contentModifier
                 )
@@ -168,6 +180,7 @@ private fun ProductList(
     products: List<Product>,
     windowSizeClass: LouArayaWindowSizeClass,
     onProductClick: (Long) -> Unit,
+    imageStorage: ProductImageStorage?,
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -180,6 +193,7 @@ private fun ProductList(
         items(products, key = { it.id }) { product ->
             ProductCard(
                 product = product,
+                imageStorage = imageStorage,
                 onClick = { onProductClick(product.id) },
                 modifier = Modifier.testTag("catalog-product-${product.id}")
             )
@@ -190,6 +204,7 @@ private fun ProductList(
 @Composable
 private fun ProductCard(
     product: Product,
+    imageStorage: ProductImageStorage?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -198,6 +213,16 @@ private fun ProductCard(
         modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
+            ProductImage(
+                productId = product.id,
+                imageReference = product.imageReference,
+                storage = imageStorage,
+                modifier = Modifier.fillMaxWidth().aspectRatio(1.5f),
+                contentDescription = "Imagen de ${product.name}",
+                contentScale = ContentScale.Crop,
+                testTag = "product-image-${product.id}"
+            )
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.titleMedium

@@ -12,7 +12,7 @@ import cl.duoc.louaraya.data.local.entity.ProductEntity
  */
 @Database(
     entities = [ProductEntity::class, CommercialRequestEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class LouArayaDatabase : RoomDatabase() {

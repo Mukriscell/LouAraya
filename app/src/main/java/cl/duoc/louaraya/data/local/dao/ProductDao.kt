@@ -18,6 +18,9 @@ interface ProductDao {
     @Query("SELECT * FROM products WHERE id = :id")
     suspend fun getById(id: Long): ProductEntity?
 
+    @Query("UPDATE products SET image_reference = :imageReference WHERE id = :id")
+    suspend fun updateImageReference(id: Long, imageReference: String): Int
+
     /**
      * Inserta los productos; si ya existe uno con el mismo id, lo reemplaza.
      */

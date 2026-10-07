@@ -15,7 +15,8 @@ class ProductMapperTest {
         lengthCm = 90.25,
         material = "Algodón",
         price = 45000L,
-        campaignCategory = CampaignCategory.INTERIOR_DECORATION.name
+        campaignCategory = CampaignCategory.INTERIOR_DECORATION.name,
+        imageReference = "product-images/fictional.jpg"
     )
 
     private val product = Product(
@@ -25,7 +26,8 @@ class ProductMapperTest {
         lengthCm = 90.25,
         material = "Algodón",
         price = 45000L,
-        campaignCategory = CampaignCategory.INTERIOR_DECORATION
+        campaignCategory = CampaignCategory.INTERIOR_DECORATION,
+        imageReference = "product-images/fictional.jpg"
     )
 
     @Test
@@ -49,5 +51,11 @@ class ProductMapperTest {
             val categorizedProduct = product.copy(campaignCategory = category)
             assertEquals(categorizedProduct, categorizedProduct.toEntity().toDomain())
         }
+    }
+
+    @Test
+    fun roundTripPreservesNullableImageReference() {
+        val productWithoutCustomImage = product.copy(imageReference = null)
+        assertEquals(productWithoutCustomImage, productWithoutCustomImage.toEntity().toDomain())
     }
 }

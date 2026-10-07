@@ -10,8 +10,17 @@ class FakeProductRepository(
     private val products: List<Product> = emptyList()
 ) : ProductRepository {
 
-    override suspend fun getProducts(): List<Product> = products
+    private val mutableProducts = products.toMutableList()
+
+    override suspend fun getProducts(): List<Product> = mutableProducts.toList()
 
     override suspend fun getProductById(id: Long): Product? =
-        products.firstOrNull { it.id == id }
+        mutableProducts.firstOrNull { it.id == id }
+
+    override suspend fun updateImageReference(id: Long, imageReference: String): Boolean {
+        val index = mutableProducts.indexOfFirst { it.id == id }
+        if (index < 0) return false
+        mutableProducts[index] = mutableProducts[index].copy(imageReference = imageReference)
+        return true
+    }
 }
