@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.dp
 import cl.duoc.louaraya.R
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
+import cl.duoc.louaraya.presentation.common.AdaptiveContentContainer
+import cl.duoc.louaraya.presentation.common.LouArayaContentWidths
+import cl.duoc.louaraya.presentation.common.LouArayaWindowSizeClass
 import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
@@ -49,7 +52,8 @@ fun ProductDetailScreen(
     viewModel: ProductDetailViewModel,
     onBack: () -> Unit,
     onCreateRequest: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
 ) {
     val uiState by viewModel.uiState.collectAsState()
     ProductDetailContent(
@@ -57,7 +61,8 @@ fun ProductDetailScreen(
         onBack = onBack,
         onRetry = viewModel::loadProduct,
         onCreateRequest = onCreateRequest,
-        modifier = modifier
+        modifier = modifier,
+        windowSizeClass = windowSizeClass
     )
 }
 
@@ -71,7 +76,8 @@ fun ProductDetailContent(
     onBack: () -> Unit,
     onRetry: () -> Unit,
     onCreateRequest: (Long) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -89,40 +95,45 @@ fun ProductDetailContent(
             )
         }
     ) { innerPadding ->
-        val contentModifier = Modifier.padding(innerPadding)
-        when (uiState) {
-            ProductDetailUiState.Loading -> CenteredBox(contentModifier) {
-                CircularProgressIndicator()
-            }
+        AdaptiveContentContainer(
+            windowSizeClass = windowSizeClass,
+            maxWidth = LouArayaContentWidths.productDetail,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            when (uiState) {
+                ProductDetailUiState.Loading -> CenteredBox(Modifier.fillMaxSize()) {
+                    CircularProgressIndicator()
+                }
 
-            ProductDetailUiState.NotFound -> CenteredBox(contentModifier) {
-                Text(
-                    text = "El producto no existe o ya no está disponible.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            is ProductDetailUiState.Error -> CenteredBox(contentModifier) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                ProductDetailUiState.NotFound -> CenteredBox(Modifier.fillMaxSize()) {
                     Text(
-                        text = uiState.message,
+                        text = "El producto no existe o ya no está disponible.",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onRetry) {
-                        Text("Reintentar")
+                }
+
+                is ProductDetailUiState.Error -> CenteredBox(Modifier.fillMaxSize()) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = uiState.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onRetry) {
+                            Text("Reintentar")
+                        }
                     }
                 }
-            }
 
-            is ProductDetailUiState.Success -> ProductDetail(
-                product = uiState.product,
-                onCreateRequest = { onCreateRequest(uiState.product.id) },
-                modifier = contentModifier
-            )
+                is ProductDetailUiState.Success -> ProductDetail(
+                    product = uiState.product,
+                    onCreateRequest = { onCreateRequest(uiState.product.id) },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
@@ -137,7 +148,7 @@ private fun ProductDetail(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
@@ -217,7 +228,8 @@ private fun ProductDetailContentPreview() {
             ),
             onBack = {},
             onRetry = {},
-            onCreateRequest = {}
+            onCreateRequest = {},
+            windowSizeClass = LouArayaWindowSizeClass.COMPACT
         )
     }
 }

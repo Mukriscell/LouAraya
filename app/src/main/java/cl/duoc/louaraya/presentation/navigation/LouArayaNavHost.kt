@@ -16,6 +16,7 @@ import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
 import cl.duoc.louaraya.domain.usecase.CreateCommercialRequestUseCase
 import cl.duoc.louaraya.domain.usecase.GetCommercialRequestsUseCase
 import cl.duoc.louaraya.domain.usecase.GetCommercialRequestByIdUseCase
+import cl.duoc.louaraya.presentation.common.currentLouArayaWindowSizeClass
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestScreen
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestViewModel
 import cl.duoc.louaraya.presentation.createrequest.CreateCommercialRequestViewModelFactory
@@ -64,6 +65,7 @@ fun LouArayaNavHost(
     getCommercialRequestByIdUseCase: GetCommercialRequestByIdUseCase,
     modifier: Modifier = Modifier
 ) {
+    val windowSizeClass = currentLouArayaWindowSizeClass()
     val navController = rememberNavController()
 
     NavHost(
@@ -82,7 +84,8 @@ fun LouArayaNavHost(
                         navController.navigate(LouArayaRoutes.productDetail(productId))
                     },
                     onViewRequests = { navController.navigate(LouArayaRoutes.REQUESTS) },
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier.padding(innerPadding),
+                    windowSizeClass = windowSizeClass
                 )
             }
         }
@@ -101,7 +104,8 @@ fun LouArayaNavHost(
             ProductDetailScreen(
                 viewModel = detailViewModel,
                 onBack = { navController.popBackStack() },
-                onCreateRequest = { navController.navigate(LouArayaRoutes.createRequest(it)) }
+                onCreateRequest = { navController.navigate(LouArayaRoutes.createRequest(it)) },
+                windowSizeClass = windowSizeClass
             )
         }
 
@@ -118,6 +122,7 @@ fun LouArayaNavHost(
             CreateCommercialRequestScreen(
                 viewModel = createViewModel,
                 onBack = { navController.popBackStack() },
+                windowSizeClass = windowSizeClass,
                 onViewRequests = {
                     navController.navigate(LouArayaRoutes.REQUESTS) {
                         // El formulario completado no reaparece al volver desde el listado.
@@ -135,7 +140,8 @@ fun LouArayaNavHost(
             CommercialRequestsScreen(
                 viewModel = requestsViewModel,
                 onBack = { navController.popBackStack() },
-                onRequestClick = { navController.navigate(LouArayaRoutes.requestDetail(it)) }
+                onRequestClick = { navController.navigate(LouArayaRoutes.requestDetail(it)) },
+                windowSizeClass = windowSizeClass
             )
         }
 
@@ -152,7 +158,8 @@ fun LouArayaNavHost(
             CommercialRequestDetailScreen(
                 viewModel = requestViewModel,
                 onBack = { navController.popBackStack() },
-                onProductClick = { navController.navigate(LouArayaRoutes.productDetail(it)) }
+                onProductClick = { navController.navigate(LouArayaRoutes.productDetail(it)) },
+                windowSizeClass = windowSizeClass
             )
         }
     }

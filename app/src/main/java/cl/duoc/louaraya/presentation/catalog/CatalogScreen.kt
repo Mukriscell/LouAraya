@@ -10,9 +10,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -25,11 +27,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
+import cl.duoc.louaraya.presentation.common.AdaptiveContentContainer
+import cl.duoc.louaraya.presentation.common.LouArayaContentWidths
+import cl.duoc.louaraya.presentation.common.LouArayaWindowSizeClass
 import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
@@ -45,7 +51,8 @@ fun CatalogScreen(
     viewModel: CatalogViewModel,
     onProductClick: (Long) -> Unit,
     onViewRequests: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
@@ -56,7 +63,8 @@ fun CatalogScreen(
         onCategorySelected = viewModel::selectCategory,
         onProductClick = onProductClick,
         onViewRequests = onViewRequests,
-        modifier = modifier
+        modifier = modifier,
+        windowSizeClass = windowSizeClass
     )
 }
 
@@ -71,74 +79,86 @@ fun CatalogContent(
     onCategorySelected: (CampaignCategory?) -> Unit,
     onProductClick: (Long) -> Unit,
     onViewRequests: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowSizeClass: LouArayaWindowSizeClass = LouArayaWindowSizeClass.COMPACT
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Catálogo", style = MaterialTheme.typography.headlineMedium)
-            TextButton(onClick = onViewRequests) { Text("Solicitudes") }
-        }
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item(key = "all") {
-                FilterChip(
-                    selected = selectedCategory == null,
-                    onClick = { onCategorySelected(null) },
-                    label = { Text("Todos") }
-                )
-            }
-            items(CampaignCategory.entries.toList(), key = { it.name }) { category ->
-                FilterChip(
-                    selected = selectedCategory == category,
-                    onClick = { onCategorySelected(category) },
-                    label = { Text(category.displayName) }
-                )
-            }
-        }
-        val contentModifier = Modifier.weight(1f)
-        when (uiState) {
-            CatalogUiState.Loading -> CenteredBox(contentModifier) {
-                CircularProgressIndicator()
-            }
-
-            CatalogUiState.Empty -> CenteredBox(contentModifier) {
+    AdaptiveContentContainer(
+        windowSizeClass = windowSizeClass,
+        maxWidth = LouArayaContentWidths.catalog,
+        modifier = modifier
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = if (selectedCategory == null) {
-                        "No hay productos disponibles."
-                    } else {
-                        "No hay productos en ${selectedCategory.displayName}."
-                    },
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
+                    text = "Catálogo",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.headlineMedium
                 )
+                TextButton(onClick = onViewRequests) { Text("Solicitudes") }
             }
-
-            is CatalogUiState.Error -> CenteredBox(contentModifier) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = uiState.message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item(key = "all") {
+                    FilterChip(
+                        selected = selectedCategory == null,
+                        onClick = { onCategorySelected(null) },
+                        label = { Text("Todos") }
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Button(onClick = onRetry) {
-                        Text("Reintentar")
-                    }
+                }
+                items(CampaignCategory.entries.toList(), key = { it.name }) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category,
+                        onClick = { onCategorySelected(category) },
+                        label = { Text(category.displayName) }
+                    )
                 }
             }
+            val contentModifier = Modifier.weight(1f)
+            when (uiState) {
+                CatalogUiState.Loading -> CenteredBox(contentModifier) {
+                    CircularProgressIndicator()
+                }
 
-            is CatalogUiState.Success -> ProductList(
-                products = uiState.products,
-                onProductClick = onProductClick,
-                modifier = contentModifier
-            )
+                CatalogUiState.Empty -> CenteredBox(contentModifier) {
+                    Text(
+                        text = if (selectedCategory == null) {
+                            "No hay productos disponibles."
+                        } else {
+                            "No hay productos en ${selectedCategory.displayName}."
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                is CatalogUiState.Error -> CenteredBox(contentModifier) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = uiState.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = onRetry) {
+                            Text("Reintentar")
+                        }
+                    }
+                }
+
+                is CatalogUiState.Success -> ProductList(
+                    products = uiState.products,
+                    windowSizeClass = windowSizeClass,
+                    onProductClick = onProductClick,
+                    modifier = contentModifier
+                )
+            }
         }
     }
 }
@@ -146,18 +166,22 @@ fun CatalogContent(
 @Composable
 private fun ProductList(
     products: List<Product>,
+    windowSizeClass: LouArayaWindowSizeClass,
     onProductClick: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(windowSizeClass.catalogColumns),
+        modifier = modifier.fillMaxSize().testTag("catalog-product-grid"),
+        contentPadding = PaddingValues(vertical = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(products, key = { it.id }) { product ->
             ProductCard(
                 product = product,
-                onClick = { onProductClick(product.id) }
+                onClick = { onProductClick(product.id) },
+                modifier = Modifier.testTag("catalog-product-${product.id}")
             )
         }
     }
@@ -166,11 +190,12 @@ private fun ProductList(
 @Composable
 private fun ProductCard(
     product: Product,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
@@ -210,22 +235,39 @@ private fun CenteredBox(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(name = "Compacto vertical", showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
-private fun CatalogContentPreview() {
+private fun CatalogCompactPortraitPreview() = CatalogContentPreview(LouArayaWindowSizeClass.COMPACT)
+
+@Preview(name = "Compacto horizontal", showBackground = true, widthDp = 480, heightDp = 320)
+@Composable
+private fun CatalogCompactLandscapePreview() = CatalogContentPreview(LouArayaWindowSizeClass.COMPACT)
+
+@Preview(name = "Medio", showBackground = true, widthDp = 720, heightDp = 960)
+@Composable
+private fun CatalogMediumPreview() = CatalogContentPreview(LouArayaWindowSizeClass.MEDIUM)
+
+@Preview(name = "Expandido", showBackground = true, widthDp = 1024, heightDp = 800)
+@Composable
+private fun CatalogExpandedPreview() = CatalogContentPreview(LouArayaWindowSizeClass.EXPANDED)
+
+@Composable
+private fun CatalogContentPreview(windowSizeClass: LouArayaWindowSizeClass) {
     LouArayaTheme {
         CatalogContent(
             uiState = CatalogUiState.Success(
                 listOf(
                     Product(1L, "Tapiz Preview", 60.0, 90.0, "Algodón", 45000L, CampaignCategory.INTERIOR_DECORATION),
-                    Product(2L, "Colgante Preview", 30.5, 50.0, "Cáñamo", 25000L, CampaignCategory.FESTIVALS)
+                    Product(2L, "Colgante Preview", 30.5, 50.0, "Cáñamo", 25000L, CampaignCategory.FESTIVALS),
+                    Product(3L, "Camino Preview", 35.0, 120.0, "Algodón", 38000L, CampaignCategory.WEDDINGS)
                 )
             ),
             selectedCategory = null,
             onRetry = {},
             onCategorySelected = {},
             onProductClick = {},
-            onViewRequests = {}
+            onViewRequests = {},
+            windowSizeClass = windowSizeClass
         )
     }
 }
