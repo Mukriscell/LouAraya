@@ -22,7 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
-/** Shared image rendering for catalog, detail, and the demo administration flow. */
+
 @Composable
 fun ProductImage(
     productId: Long,
@@ -88,14 +88,17 @@ fun ProductImage(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                resource != null -> Image(
+                resource != null && imageReference == null -> Image(
                     painter = painterResource(resource),
                     contentDescription = contentDescription,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = contentScale
                 )
 
-                else -> Text("Imagen no disponible", style = MaterialTheme.typography.bodySmall)
+                else -> Text(
+                    if (imageReference != null && imageState == ProductImageLoadState.Loading) "Cargando imagen…" else "Imagen no disponible",
+                    style = MaterialTheme.typography.bodySmall
+                )
             }
         }
     }

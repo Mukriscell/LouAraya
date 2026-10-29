@@ -6,9 +6,9 @@ import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.RequestStatus
 import cl.duoc.louaraya.domain.model.RequestIntention
 
-/**
- * Datos ficticios compartidos por las pruebas de Use Cases.
- */
+
+
+
 object TestData {
 
     val product1 = Product(

@@ -6,9 +6,9 @@ import cl.duoc.louaraya.domain.model.RequestStatus
 import cl.duoc.louaraya.domain.repository.CommercialRequestRepository
 import cl.duoc.louaraya.domain.repository.ProductRepository
 
-/**
- * Registra una nueva solicitud de compra o reserva y retorna la solicitud creada.
- */
+
+
+
 class CreateCommercialRequestUseCase(
     private val commercialRequestRepository: CommercialRequestRepository,
     private val productRepository: ProductRepository,
@@ -35,10 +35,11 @@ class CreateCommercialRequestUseCase(
             intention = input.intention,
             anonymizedClient = DEMO_CLIENT_ID,
             comment = comment,
-            total = product.price,
-            // Envío de una intención concreta, aún pendiente de revisión comercial.
+            total = FormValidation.requestTotal(product.price, input.quantity),
+
             status = RequestStatus.PENDING,
-            campaignCategory = product.campaignCategory
+            campaignCategory = product.campaignCategory,
+            quantity = input.quantity
         )
         return commercialRequestRepository.createRequest(request)
     }

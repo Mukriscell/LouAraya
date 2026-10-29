@@ -4,9 +4,9 @@ import cl.duoc.louaraya.domain.model.CommercialRequest
 import cl.duoc.louaraya.domain.model.RequestStatus
 import cl.duoc.louaraya.domain.repository.CommercialRequestRepository
 
-/**
- * Implementación en memoria de [CommercialRequestRepository] para pruebas unitarias.
- */
+
+
+
 class FakeCommercialRequestRepository(
     initialRequests: List<CommercialRequest> = emptyList()
 ) : CommercialRequestRepository {

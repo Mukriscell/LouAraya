@@ -40,9 +40,9 @@ import cl.duoc.louaraya.presentation.productdetail.ProductDetailScreen
 import cl.duoc.louaraya.presentation.productdetail.ProductDetailViewModel
 import cl.duoc.louaraya.presentation.productdetail.ProductDetailViewModelFactory
 
-/**
- * Rutas de navegación de la aplicación.
- */
+
+
+
 object LouArayaRoutes {
     const val CATALOG = "catalog"
     const val PRODUCT_ID_ARG = "productId"
@@ -61,12 +61,12 @@ object LouArayaRoutes {
     fun adminEditImage(productId: Long): String = "admin/product/$productId/image"
 }
 
-/**
- * Grafo de navegación. Solo recibe Use Cases; no conoce Room ni repositorios.
- *
- * Cada ViewModel queda asociado a su entrada del back stack, por lo que el
- * catálogo conserva su estado mientras se visualiza el detalle.
- */
+
+
+
+
+
+
 @Composable
 fun LouArayaNavHost(
     getProductsUseCase: GetProductsUseCase,
@@ -143,7 +143,7 @@ fun LouArayaNavHost(
                 windowSizeClass = windowSizeClass,
                 onViewRequests = {
                     navController.navigate(LouArayaRoutes.REQUESTS) {
-                        // El formulario completado no reaparece al volver desde el listado.
+
                         popUpTo(LouArayaRoutes.CATALOG)
                         launchSingleTop = true
                     }

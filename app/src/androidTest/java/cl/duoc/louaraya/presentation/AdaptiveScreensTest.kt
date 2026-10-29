@@ -109,7 +109,7 @@ class AdaptiveScreensTest {
         compose.runOnIdle { assertEquals(CampaignCategory.WEDDINGS, selectedCategory) }
         assertCompactGridHasOneColumn()
 
-        // A short compact window still exposes later products through vertical scrolling.
+
         compose.runOnIdle { windowSize = DpSize(480.dp, 320.dp) }
         compose.waitForIdle()
         compose.onNodeWithTag("catalog-product-grid")

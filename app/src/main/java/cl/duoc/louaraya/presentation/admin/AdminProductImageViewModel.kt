@@ -41,7 +41,7 @@ class AdminProductImageViewModel(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Exception) {
-            // Cleanup is best-effort; capture and image flows remain usable if a stale file is locked.
+
         }
     }
 
@@ -78,7 +78,7 @@ class AdminProductImageViewModel(
         }
     }
 
-    /** A null picker result means cancellation; keep any prior unsaved selection. */
+
     fun selectImage(sourceUri: String?) {
         if (sourceUri == null) return
         val ready = _uiState.value as? AdminProductImageUiState.Ready ?: return
@@ -132,7 +132,7 @@ class AdminProductImageViewModel(
         }
     }
 
-    /** Consumes the one-shot launcher request before calling ActivityResultLauncher.launch. */
+
     fun consumeCameraLaunchRequest(uri: String): Boolean {
         val ready = _uiState.value as? AdminProductImageUiState.Ready ?: return false
         if (ready.cameraLaunchUri != uri || ready.pendingCameraUri != uri) return false
@@ -140,7 +140,7 @@ class AdminProductImageViewModel(
         return true
     }
 
-    /** Reuses an interrupted capture target after process recreation without launching automatically. */
+
     fun retryCameraCapture() {
         val ready = _uiState.value as? AdminProductImageUiState.Ready ?: return
         val pendingUri = ready.pendingCameraUri ?: return
@@ -161,7 +161,7 @@ class AdminProductImageViewModel(
         deleteCameraCaptureInBackground(uri)
     }
 
-    /** Stores the result even if product loading has not completed after process recreation. */
+
     fun onCameraCaptureResult(saved: Boolean) {
         if (savedStateHandle.get<String>(AdminProductImageSavedStateKeys.PENDING_CAMERA_URI) == null &&
             (_uiState.value as? AdminProductImageUiState.Ready)?.pendingCameraUri == null
@@ -201,7 +201,7 @@ class AdminProductImageViewModel(
         deleteCameraCapturesInBackground(captures)
     }
 
-    /** Await cleanup before the editor route is popped so active camera files are not orphaned. */
+
     suspend fun discardCameraDraft() {
         cameraPreparationJob?.cancel()
         cameraPreparationJob?.join()
@@ -390,7 +390,7 @@ class AdminProductImageViewModel(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (_: Exception) {
-                        // A later abandoned-file sweep will remove a capture that could not be deleted now.
+
                     }
                 }
             }

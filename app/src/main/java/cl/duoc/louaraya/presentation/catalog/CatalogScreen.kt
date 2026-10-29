@@ -44,12 +44,12 @@ import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
 
-/**
- * Pantalla de catálogo conectada a [CatalogViewModel].
- *
- * @param onProductClick se invoca con el id del producto seleccionado; quien
- * aloja la pantalla decide cómo navegar.
- */
+
+
+
+
+
+
 @Composable
 fun CatalogScreen(
     viewModel: CatalogViewModel,
@@ -76,9 +76,9 @@ fun CatalogScreen(
     )
 }
 
-/**
- * Contenido de la pantalla sin dependencia del ViewModel (facilita previews).
- */
+
+
+
 @Composable
 fun CatalogContent(
     uiState: CatalogUiState,
@@ -108,7 +108,7 @@ fun CatalogContent(
                     TextButton(onClick = onViewRequests) { Text("Solicitudes") }
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onAdmin) { Text("Administración (demo)") }
+                    TextButton(onClick = onAdmin) { Text("Administración") }
                 }
             }
             LazyRow(

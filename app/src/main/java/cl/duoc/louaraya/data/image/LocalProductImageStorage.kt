@@ -21,11 +21,22 @@ import java.io.FileOutputStream
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 
-/** App-private image storage; domain and presentation exchange only relative references and bytes. */
-class LocalProductImageStorage(context: Context) : ProductImageStorage {
+
+class LocalProductImageStorage(
+    context: Context,
+    private val imageDirectoryName: String = "product-images",
+    private val captureDirectoryName: String = "camera-captures",
+    private val savedDimension: Int = 1600
+) : ProductImageStorage {
+    init {
+        require(imageDirectoryName in setOf("product-images", "avatar-images"))
+        require(captureDirectoryName in setOf("camera-captures", "avatar-captures"))
+        require(savedDimension in 1..1600)
+    }
     private val appContext = context.applicationContext
-    private val imageDirectory = File(appContext.filesDir, IMAGE_DIRECTORY)
-    private val cameraCaptureDirectory = File(appContext.filesDir, CAMERA_CAPTURE_DIRECTORY)
+    private val imageDirectory = File(appContext.filesDir, imageDirectoryName)
+    private val cameraCaptureDirectory = File(appContext.filesDir, captureDirectoryName)
+    private val referencePattern = Regex(Regex.escape(imageDirectoryName) + "/[0-9a-fA-F-]{36}\\.jpg")
 
     override suspend fun createCameraCaptureUri(): String {
         val createdFile = AtomicReference<File?>(null)
@@ -95,7 +106,7 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
                             }
                         }
                     }
-                    val bitmap = decodeOriented(sourceFile, MAX_SAVED_DIMENSION)
+                    val bitmap = decodeOriented(sourceFile, savedDimension)
                         ?: error("El archivo seleccionado no contiene una imagen válida.")
                     try {
                         currentCoroutineContext().ensureActive()
@@ -108,7 +119,7 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
                         bitmap.recycle()
                     }
                     check(pendingFile.renameTo(finalFile)) { "No se pudo guardar la imagen seleccionada." }
-                    IMAGE_DIRECTORY + "/" + finalFile.name
+                    imageDirectoryName + "/" + finalFile.name
                 } finally {
                     sourceFile.delete()
                     pendingFile.delete()
@@ -174,7 +185,7 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
     }
 
     private fun resolve(reference: String): File? {
-        if (!REFERENCE_PATTERN.matches(reference)) return null
+        if (!referencePattern.matches(reference)) return null
         val file = File(appContext.filesDir, reference)
         val base = imageDirectory.canonicalFile
         val target = file.canonicalFile
@@ -185,7 +196,7 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
         val uri = runCatching { uriString.toUri() }.getOrNull() ?: return null
         if (uri.scheme != "content" || uri.authority != "${appContext.packageName}.fileprovider") return null
         val segments = uri.pathSegments
-        if (segments.size != 2 || segments[0] != CAMERA_CAPTURE_DIRECTORY ||
+        if (segments.size != 2 || segments[0] != captureDirectoryName ||
             !CAMERA_FILENAME_PATTERN.matches(segments[1])
         ) return null
         val file = File(cameraCaptureDirectory, segments[1])
@@ -246,13 +257,9 @@ class LocalProductImageStorage(context: Context) : ProductImageStorage {
     }
 
     private companion object {
-        const val IMAGE_DIRECTORY = "product-images"
-        const val CAMERA_CAPTURE_DIRECTORY = "camera-captures"
         const val MAX_SOURCE_BYTES = 25L * 1024 * 1024
         const val MAX_SOURCE_PIXELS = 100_000_000L
-        const val MAX_SAVED_DIMENSION = 1600
         const val JPEG_QUALITY = 88
-        val REFERENCE_PATTERN = Regex("product-images/[0-9a-fA-F-]{36}\\.jpg")
         val CAMERA_FILENAME_PATTERN = Regex("[0-9a-fA-F-]{36}\\.jpg")
     }
 }

@@ -50,7 +50,7 @@ class CreateCommercialRequestViewModel(
     fun submit() {
         val form = _uiState.value as? CreateCommercialRequestUiState.Form ?: return
         if (form.isSaving) return
-        // Cambia antes de lanzar la coroutine para bloquear dos pulsaciones consecutivas.
+
         _uiState.value = form.copy(isSaving = true, error = null)
         viewModelScope.launch {
             try {

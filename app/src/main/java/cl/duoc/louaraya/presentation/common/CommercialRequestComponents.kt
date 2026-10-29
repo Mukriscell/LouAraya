@@ -29,6 +29,7 @@ import java.util.Date
 import java.util.Locale
 
 fun RequestIntention.displayName(): String = when (this) {
+    RequestIntention.QUOTATION -> "Cotización"
     RequestIntention.PURCHASE -> "Compra"
     RequestIntention.RESERVATION -> "Reserva"
 }
@@ -38,6 +39,7 @@ fun RequestStatus.displayName(): String = when (this) {
     RequestStatus.PENDING -> "Pendiente"
     RequestStatus.CONFIRMED -> "Confirmado"
     RequestStatus.DELIVERED -> "Entregado"
+    RequestStatus.CANCELLED -> "Cancelada"
 }
 
 fun formatRequestDate(date: Long): String =

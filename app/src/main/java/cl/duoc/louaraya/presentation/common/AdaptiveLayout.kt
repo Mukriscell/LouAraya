@@ -33,7 +33,7 @@ object LouArayaContentWidths {
     val requestDetail = 840.dp
 }
 
-/** Uses the current app-window metrics and updates when the window crosses a breakpoint. */
+
 @Suppress("DEPRECATION")
 @Composable
 fun currentLouArayaWindowSizeClass(): LouArayaWindowSizeClass =
@@ -41,7 +41,7 @@ fun currentLouArayaWindowSizeClass(): LouArayaWindowSizeClass =
         currentWindowAdaptiveInfo(supportLargeAndXLargeWidth = true).windowSizeClass
     )
 
-/** Maps the official window breakpoints to the three layouts used by this app. */
+
 fun louArayaWindowSizeClass(windowSizeClass: WindowSizeClass): LouArayaWindowSizeClass =
     when {
         windowSizeClass.isWidthAtLeastBreakpoint(

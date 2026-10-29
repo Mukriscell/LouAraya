@@ -44,7 +44,7 @@ class Migration3To4Test {
                 old.version = 3
             }
             val db = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_3_4)
+                .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
             try {
                 val product = db.productDao().getById(7L)
@@ -71,7 +71,7 @@ class Migration3To4Test {
                 db.close()
             }
             val reopened = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_3_4)
+                .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
             try {
                 val persistedProduct = reopened.productDao().getById(7L)

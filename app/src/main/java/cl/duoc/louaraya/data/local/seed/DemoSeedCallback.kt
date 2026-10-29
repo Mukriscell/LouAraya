@@ -3,20 +3,32 @@ package cl.duoc.louaraya.data.local.seed
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/**
- * Inserta los productos de [DemoProductSeed] al abrir la base de datos,
- * únicamente si la tabla `products` está vacía.
- *
- * Se usa SQL directo porque los DAO no pueden invocarse mientras Room abre la
- * base de datos. Al ejecutarse durante la apertura, el seed queda listo antes
- * de que se resuelva la primera consulta del catálogo.
- */
+
+
+
+
+
+
+
+
 class DemoSeedCallback : RoomDatabase.Callback() {
 
     override fun onOpen(db: SupportSQLiteDatabase) {
         super.onOpen(db)
+        updatePreviousProductLabels(db)
         if (isProductsTableEmpty(db)) {
             insertDemoProducts(db)
+        }
+    }
+
+
+    private fun updatePreviousProductLabels(db: SupportSQLiteDatabase) {
+        DemoProductSeed.products.forEach { product ->
+            val previousName = DemoProductSeed.previousDisplayNames[product.id] ?: return@forEach
+            db.execSQL(
+                "UPDATE products SET name = ? WHERE id = ? AND name = ?",
+                arrayOf<Any>(product.name, product.id, previousName)
+            )
         }
     }
 

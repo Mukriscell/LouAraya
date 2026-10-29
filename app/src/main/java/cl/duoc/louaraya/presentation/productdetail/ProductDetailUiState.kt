@@ -2,9 +2,9 @@ package cl.duoc.louaraya.presentation.productdetail
 
 import cl.duoc.louaraya.domain.model.Product
 
-/**
- * Estados posibles de la pantalla de detalle de producto.
- */
+
+
+
 sealed interface ProductDetailUiState {
 
     data object Loading : ProductDetailUiState

@@ -4,9 +4,9 @@ import cl.duoc.louaraya.data.local.entity.ProductEntity
 import cl.duoc.louaraya.domain.model.CampaignCategory
 import cl.duoc.louaraya.domain.model.Product
 
-/**
- * Convierte una entidad de Room en un modelo de dominio.
- */
+
+
+
 fun ProductEntity.toDomain(): Product = Product(
     id = id,
     name = name,
@@ -15,12 +15,13 @@ fun ProductEntity.toDomain(): Product = Product(
     material = material,
     price = price,
     campaignCategory = CampaignCategory.valueOf(campaignCategory),
-    imageReference = imageReference
+    imageReference = imageReference,
+    description = description, availability = availability, active = active, stock = stock
 )
 
-/**
- * Convierte un modelo de dominio en una entidad de Room.
- */
+
+
+
 fun Product.toEntity(): ProductEntity = ProductEntity(
     id = id,
     name = name,
@@ -29,5 +30,6 @@ fun Product.toEntity(): ProductEntity = ProductEntity(
     material = material,
     price = price,
     campaignCategory = campaignCategory.name,
-    imageReference = imageReference
+    imageReference = imageReference,
+    description = description, availability = availability, active = active, stock = stock
 )

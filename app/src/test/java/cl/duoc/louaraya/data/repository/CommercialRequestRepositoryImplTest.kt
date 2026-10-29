@@ -59,6 +59,8 @@ class CommercialRequestRepositoryImplTest {
 
     private class FakeDao : CommercialRequestDao {
         private val rows = mutableMapOf<Long, CommercialRequestEntity>()
+        override suspend fun getForOwner(ownerId: Long): List<CommercialRequestEntity> = getAll().filter { it.ownerId == ownerId }
+
         override suspend fun getAll() = rows.values.sortedWith(
             compareByDescending<CommercialRequestEntity> { it.date }.thenByDescending { it.id })
         override suspend fun getById(id: Long) = rows[id]
@@ -70,6 +72,11 @@ class CommercialRequestRepositoryImplTest {
         override suspend fun updateStatus(id: Long, status: String): Int {
             val row = rows[id] ?: return 0
             rows[id] = row.copy(status = status)
+            return 1
+        }
+        override suspend fun updateAgreement(id: Long, total: Long, date: Long): Int {
+            val row = rows[id] ?: return 0
+            rows[id] = row.copy(agreedTotal = total, agreedAt = date)
             return 1
         }
     }

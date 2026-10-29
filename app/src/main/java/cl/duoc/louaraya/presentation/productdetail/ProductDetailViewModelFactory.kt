@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import cl.duoc.louaraya.domain.usecase.GetProductByIdUseCase
 
-/**
- * Crea [ProductDetailViewModel] para un producto concreto mientras no se use
- * un framework de inyección de dependencias.
- */
+
+
+
+
 class ProductDetailViewModelFactory(
     private val productId: Long,
     private val getProductByIdUseCase: GetProductByIdUseCase

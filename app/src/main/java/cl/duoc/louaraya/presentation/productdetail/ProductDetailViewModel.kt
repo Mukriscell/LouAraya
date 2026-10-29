@@ -10,10 +10,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel del detalle de producto. Carga el producto [productId] al crearse
- * y expone el resultado como [ProductDetailUiState].
- */
+
+
+
+
 class ProductDetailViewModel(
     private val productId: Long,
     private val getProductByIdUseCase: GetProductByIdUseCase

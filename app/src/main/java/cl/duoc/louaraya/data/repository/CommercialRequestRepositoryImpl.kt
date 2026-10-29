@@ -7,10 +7,10 @@ import cl.duoc.louaraya.domain.model.CommercialRequest
 import cl.duoc.louaraya.domain.model.RequestStatus
 import cl.duoc.louaraya.domain.repository.CommercialRequestRepository
 
-/**
- * Etapa local del MVP. La futura API de la cátedra y su sincronización se
- * integrarán en data manteniendo la UI y los casos de uso independientes de Retrofit.
- */
+
+
+
+
 class CommercialRequestRepositoryImpl(
     private val dao: CommercialRequestDao
 ) : CommercialRequestRepository {

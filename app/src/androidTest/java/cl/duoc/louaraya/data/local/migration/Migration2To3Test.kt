@@ -26,7 +26,7 @@ class Migration2To3Test {
         try {
             createVersion2Database(file)
             val migrated = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
             try {
                 val products = migrated.productDao().getAll().associateBy { it.id }
@@ -47,7 +47,7 @@ class Migration2To3Test {
             }
 
             val reopened = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .build()
             try {
                 assertEquals(
@@ -66,7 +66,7 @@ class Migration2To3Test {
     private fun createVersion2Database(file: java.io.File) {
         SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->
             db.execSQL(
-                """
+"""
                 CREATE TABLE products (
                     id INTEGER NOT NULL PRIMARY KEY,
                     name TEXT NOT NULL,
@@ -83,7 +83,7 @@ class Migration2To3Test {
             insertProduct(db, 4, "Portamacetero Demo")
             insertProduct(db, 5, "Pieza legacy sin categoría")
             db.execSQL(
-                """
+"""
                 CREATE TABLE commercial_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                     product_id INTEGER NOT NULL,
@@ -102,7 +102,7 @@ class Migration2To3Test {
                     "ON commercial_requests (product_id)"
             )
             db.execSQL(
-                """
+"""
                 INSERT INTO commercial_requests (
                     id, product_id, date, intention, anonymized_client, comment,
                     total, status, campaign_category

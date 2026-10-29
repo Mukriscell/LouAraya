@@ -90,9 +90,9 @@ class ProductDetailViewModelTest {
     private fun createViewModel(productId: Long, repository: ProductRepository) =
         ProductDetailViewModel(productId, GetProductByIdUseCase(repository))
 
-    /**
-     * Repositorio que siempre falla, para simular un error de carga.
-     */
+
+
+
     private class FailingProductRepository(
         private val message: String
     ) : ProductRepository {

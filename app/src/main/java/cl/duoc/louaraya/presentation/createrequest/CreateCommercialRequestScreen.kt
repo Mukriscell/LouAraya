@@ -110,13 +110,12 @@ fun CreateCommercialRequestContent(
                             enabled = !state.isSaving
                         )
                     }
-                    Text("Cliente ficticio: ${CreateCommercialRequestUseCase.DEMO_CLIENT_ID}")
                     OutlinedTextField(
                         value = state.comment,
                         onValueChange = onCommentChange,
                         label = { Text("Comentario o requerimiento (opcional)") },
                         supportingText = {
-                            Text("Solo requerimientos ficticios, sin datos personales reales. Máximo ${CreateCommercialRequestUseCase.MAX_COMMENT_LENGTH} caracteres.")
+                            Text("Cuéntanos qué necesitas. Máximo ${CreateCommercialRequestUseCase.MAX_COMMENT_LENGTH} caracteres.")
                         },
                         enabled = !state.isSaving,
                         minLines = 3,

@@ -11,15 +11,21 @@ interface CommercialRequestDao {
     @Query("SELECT * FROM commercial_requests ORDER BY date DESC, id DESC")
     suspend fun getAll(): List<CommercialRequestEntity>
 
+    @Query("SELECT * FROM commercial_requests WHERE owner_id = :ownerId ORDER BY date DESC, id DESC")
+    suspend fun getForOwner(ownerId: Long): List<CommercialRequestEntity>
+
     @Query("SELECT * FROM commercial_requests WHERE id = :id")
     suspend fun getById(id: Long): CommercialRequestEntity?
 
-    // ABORT por defecto: una inserción nunca reemplaza una solicitud anterior.
+
     @Insert
     suspend fun insert(request: CommercialRequestEntity): Long
 
     @Query("UPDATE commercial_requests SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: Long, status: String): Int
+
+    @Query("UPDATE commercial_requests SET agreedTotal = :total, agreedAt = :date WHERE id = :id")
+    suspend fun updateAgreement(id: Long, total: Long, date: Long): Int
 
     @Transaction
     suspend fun updateStatusAndGet(id: Long, status: String): CommercialRequestEntity {

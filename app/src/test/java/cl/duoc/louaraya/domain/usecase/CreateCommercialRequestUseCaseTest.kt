@@ -13,6 +13,13 @@ class CreateCommercialRequestUseCaseTest {
     private val productRepository = FakeProductRepository(listOf(TestData.product1))
     private val useCase = CreateCommercialRequestUseCase(repository, productRepository) { 123456L }
 
+    @Test fun requestedQuantityMultipliesTheTrustedUnitPrice() = runBlocking {
+        val result = useCase(input().copy(quantity = 4))
+        assertEquals(4, result.quantity)
+        assertEquals(TestData.product1.price * 4, result.total)
+        assertEquals(TestData.product1.price, result.unitPrice)
+    }
+
     @Test
     fun createsPendingPurchaseWithAssignedIdTrustedPriceAndProductCampaign() = runBlocking {
         val result = useCase(input())

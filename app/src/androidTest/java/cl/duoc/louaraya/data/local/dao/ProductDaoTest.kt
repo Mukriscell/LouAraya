@@ -16,9 +16,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Pruebas instrumentadas de [ProductDao] sobre una base Room real en memoria.
- */
+
+
+
 @RunWith(AndroidJUnit4::class)
 class ProductDaoTest {
 

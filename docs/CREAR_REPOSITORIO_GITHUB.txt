@@ -1,0 +1,131 @@
+CREAR EL REPOSITORIO DE LOU ARAYA EN GITHUB
+Guía para PowerShell / terminal de Android Studio en Windows
+Actualizada: 28 de octubre de 2026
+
+Ejecuta los bloques en orden, uno por uno. Sustituye TU NOMBRE y TU CORREO por los de tu cuenta.
+Estos comandos crean el repositorio y publican el código cuando tú los ejecutes.
+Estado revisado: el proyecto ya tiene Git, está en la rama main y no tiene remoto configurado.
+
+1. ABRIR EL PROYECTO Y VERIFICAR LAS HERRAMIENTAS
+
+Set-Location -LiteralPath 'C:\Users\lucas\AndroidStudioProjects\LouAraya'
+git --version
+gh --version
+
+Si alguno no existe, instala SOLO el que falta:
+winget install --id Git.Git -e
+winget install --id GitHub.cli -e
+
+Después de instalar, cierra y vuelve a abrir el terminal; repite Set-Location y las verificaciones.
+
+2. CONFIGURAR EL AUTOR DEL COMMIT PARA ESTE PROYECTO
+
+git config user.name 'TU NOMBRE'
+git config user.email 'TU CORREO DE GITHUB'
+
+Puedes usar el correo privado noreply que GitHub muestra en Settings > Emails.
+
+3. CONECTAR TU CUENTA DE GITHUB
+
+gh auth login --hostname github.com --git-protocol https --web
+gh auth setup-git
+gh auth status
+
+Completa en el navegador el código que te muestre GitHub CLI.
+
+4. REVISAR LO QUE SE VA A SUBIR
+
+git status --short
+git branch --show-current
+git remote -v
+git diff --stat
+
+La rama revisada es main. Si aparece un remoto origin, ve al paso 8 antes de crear otro.
+El .gitignore del proyecto excluye local.properties, .idea, compilaciones, tmp, output,
+archivos .env y claves de firma. No incluye APK ni capturas locales en el repositorio.
+Conserva el wrapper de Gradle, los recursos y las fuentes; sí se necesitan para compilar.
+Revisa también los archivos que Git ya seguía: .gitignore no retira archivos del historial.
+
+5. PREPARAR Y REVISAR EL COMMIT
+
+git add --all
+git diff --cached --stat
+git diff --cached --name-status
+
+La lista debe corresponder al estado actual que quieres entregar, incluidas las eliminaciones.
+Si preparaste por error un archivo, retíralo del commit sin borrarlo del disco:
+git restore --staged -- 'RUTA_DEL_ARCHIVO'
+
+Cuando la lista esté correcta:
+git commit -m 'Implementa Lou Araya con acceso, registro y funcionamiento local'
+
+Si dice que no hay cambios para confirmar, continúa usando el commit existente.
+
+6. CREAR EL REPOSITORIO Y SUBIR LA APP
+
+Ejecuta este comando una sola vez. Se creará en la cuenta autenticada y será privado:
+
+gh repo create LouAraya --private --source . --remote origin --push
+
+Si quieres otro nombre, cambia LouAraya antes de ejecutarlo.
+No crees previamente un README ni otro repositorio con el mismo nombre en la web.
+Si GitHub informa que el nombre ya existe, utiliza otro nombre o sigue el paso 8
+si ese repositorio es el que deseas usar. No borres el repositorio existente.
+
+7. COMPROBAR LA PUBLICACIÓN
+
+git remote -v
+git status
+gh repo view --web
+
+GitHub debe mostrar app, gradle, gradlew, gradlew.bat y los archivos del proyecto.
+El APK se entrega aparte; no hace falta subirlo al código fuente.
+
+8. SI EL REPOSITORIO YA EXISTE EN GITHUB
+
+No ejecutes el paso 6. Revisa primero la URL:
+git remote -v
+
+Si NO hay origin, agrégalo con la URL real de tu repositorio:
+git remote add origin https://github.com/TU_USUARIO/LouAraya.git
+
+Si origin ya apunta al repositorio correcto, no lo agregues nuevamente.
+Si apunta a otro destino, revisa y reemplaza su URL solo si corresponde:
+git remote set-url origin https://github.com/TU_USUARIO/LouAraya.git
+
+git fetch origin
+git push -u origin main
+
+Si Git rechaza el push porque el remoto tiene commits propios, no uses --force.
+Consulta los cambios de ambas ramas y resuelve su integración antes de volver a subir.
+
+9. SUBIR CAMBIOS FUTUROS
+
+Set-Location -LiteralPath 'C:\Users\lucas\AndroidStudioProjects\LouAraya'
+git status --short
+git add --all
+git diff --cached --stat
+git commit -m 'Describe los cambios realizados'
+git push
+
+10. ABRIR Y COMPILAR EN OTRO PC
+
+En una carpeta de trabajo del otro PC:
+git clone https://github.com/TU_USUARIO/LouAraya.git
+
+Abre la carpeta LouAraya desde Android Studio. Instala el SDK que pida el proyecto
+(actualmente compileSdk y targetSdk 37) y permite la sincronización de Gradle.
+Android Studio genera local.properties con la ruta local del SDK de ese PC.
+Configura JDK 25 para Gradle (la versión declarada por el proyecto; Gradle puede descargarla). Si el JDK integrado de Android Studio cumple esa versión, puedes usarlo. Para compilar desde su terminal de PowerShell:
+
+$env:JAVA_HOME = 'C:\Program Files\Android\Android Studio\jbr'
+.\gradlew.bat :app:assembleDebug
+
+El APK quedará en app\build\outputs\apk\debug\app-debug.apk.
+La primera sincronización necesita Internet para descargar dependencias.
+Los usuarios, fotos y datos SQLite del teléfono no viajan con el repositorio;
+cada instalación conserva sus propios datos locales.
+
+Referencias oficiales:
+https://cli.github.com/manual/gh_repo_create
+https://docs.github.com/en/migrations/importing-source-code/using-the-command-line-to-import-source-code/adding-locally-hosted-code-to-github

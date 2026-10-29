@@ -3,20 +3,28 @@ package cl.duoc.louaraya.data.local.seed
 import cl.duoc.louaraya.data.local.entity.ProductEntity
 import cl.duoc.louaraya.domain.model.CampaignCategory
 
-/**
- * DATOS DEMO TEMPORALES.
- *
- * Productos ficticios usados solo para visualizar el catálogo mientras no se
- * disponga del listado sintético oficial. No provienen del documento del caso
- * y deben reemplazarse cuando exista la fuente definitiva (listado oficial o API).
- * Su asignación cubre una categoría oficial por producto solo para demostrar filtros.
- */
+
+
+
+
+
+
+
+
 object DemoProductSeed {
+
+
+    val previousDisplayNames = mapOf(
+        1L to "Tapiz Demo Aurora",
+        2L to "Colgante Demo Brisa",
+        3L to "Camino de Mesa Demo",
+        4L to "Portamacetero Demo"
+    )
 
     val products: List<ProductEntity> = listOf(
         ProductEntity(
             id = 1L,
-            name = "Tapiz Demo Aurora",
+            name = "Tapiz Aurora",
             widthCm = 60.0,
             lengthCm = 90.0,
             material = "Algodón",
@@ -25,7 +33,7 @@ object DemoProductSeed {
         ),
         ProductEntity(
             id = 2L,
-            name = "Colgante Demo Brisa",
+            name = "Colgante Brisa",
             widthCm = 30.0,
             lengthCm = 50.0,
             material = "Cáñamo",
@@ -34,7 +42,7 @@ object DemoProductSeed {
         ),
         ProductEntity(
             id = 3L,
-            name = "Camino de Mesa Demo",
+            name = "Camino de Mesa",
             widthCm = 35.0,
             lengthCm = 180.0,
             material = "Algodón",
@@ -43,7 +51,7 @@ object DemoProductSeed {
         ),
         ProductEntity(
             id = 4L,
-            name = "Portamacetero Demo",
+            name = "Portamacetero",
             widthCm = 25.0,
             lengthCm = 110.0,
             material = "Yute",

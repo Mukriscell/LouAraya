@@ -15,7 +15,9 @@ fun CommercialRequestEntity.toDomain(): CommercialRequest = CommercialRequest(
     comment = comment,
     total = total,
     status = RequestStatus.valueOf(status),
-    campaignCategory = campaignCategory?.let(CampaignCategory::valueOf)
+    campaignCategory = campaignCategory?.let(CampaignCategory::valueOf),
+    ownerId = ownerId, customization = customization, campaignId = campaignId,
+    sourceCollectionId = sourceCollectionId, journeyId = journeyId, agreedTotal = agreedTotal, agreedAt = agreedAt, quantity = quantity
 )
 
 fun CommercialRequest.toEntity(): CommercialRequestEntity = CommercialRequestEntity(
@@ -27,5 +29,7 @@ fun CommercialRequest.toEntity(): CommercialRequestEntity = CommercialRequestEnt
     comment = comment,
     total = total,
     status = status.name,
-    campaignCategory = campaignCategory?.name
+    campaignCategory = campaignCategory?.name,
+    ownerId = ownerId, customization = customization, campaignId = campaignId,
+    sourceCollectionId = sourceCollectionId, journeyId = journeyId, agreedTotal = agreedTotal, agreedAt = agreedAt, quantity = quantity
 )

@@ -1,6 +1,8 @@
 package cl.duoc.louaraya.presentation
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -12,14 +14,15 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.Assert.assertTrue
 
-/** Opens the real Android Photo Picker and backs out without selecting or changing a product. */
+
 class NativePhotoPickerCancelTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test
     fun nativePhotoPickerCanBeCancelledWithoutCreatingAnImageSelection() {
-        compose.onNodeWithText("Administración (demo)").performClick()
-        compose.onNodeWithTag("edit-image-1").performScrollTo().performClick()
+        compose.signInDemo("admin.demo")
+        compose.onNodeWithTag("tab-products").performClick()
+        compose.onAllNodesWithContentDescription("Editar fotografía:", substring = true)[0].performScrollTo().performClick()
         compose.onNodeWithTag("pick-product-image").performClick()
 
         val appPackage = compose.activity.packageName

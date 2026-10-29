@@ -9,24 +9,27 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
-/** Saves a normalized private image, updates one database column, then removes the old file. */
+
 class UpdateProductImageUseCase(
     private val productRepository: ProductRepository,
-    private val imageStorage: ProductImageStorage
+    private val imageStorage: ProductImageStorage,
+    private val authorize: suspend () -> Unit = {}
 ) {
     suspend operator fun invoke(productId: Long, sourceUri: String): String {
+        authorize()
         val current = requireNotNull(productRepository.getProductById(productId)) {
             "El producto ya no está disponible."
         }
         val newReference = imageStorage.saveFromSource(sourceUri)
         try {
             currentCoroutineContext().ensureActive()
+            authorize()
             check(productRepository.updateImageReference(productId, newReference)) {
                 "No fue posible guardar la imagen del producto."
             }
         } catch (failure: Throwable) {
-            // Room may finish its UPDATE immediately before cancellation is delivered. Inspect
-            // the committed reference before cleaning files so no row points to a deleted file.
+
+
             withContext(NonCancellable) {
                 var lookupSucceeded = false
                 var latest: Product? = null
@@ -34,7 +37,7 @@ class UpdateProductImageUseCase(
                     latest = productRepository.getProductById(productId)
                     lookupSucceeded = true
                 } catch (_: Exception) {
-                    // An unknown commit outcome must preserve the new file rather than risk a dangling row.
+
                 }
                 if (lookupSucceeded) {
                     if (latest?.imageReference == newReference) {

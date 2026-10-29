@@ -1,5 +1,6 @@
 *.iml
 .gradle
+.gradle-figma/
 /local.properties
 /.idea/caches
 /.idea/libraries
@@ -17,3 +18,17 @@ local.properties
 /.idea/
 **/build/
 .kotlin/
+
+docs/qr/.packages/
+
+# Local build deliveries, screenshots, tooling caches and private configuration.
+/tmp/
+/output/
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+keystore.properties
+secrets.properties
+service-account*.json

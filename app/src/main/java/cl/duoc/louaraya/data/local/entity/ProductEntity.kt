@@ -4,9 +4,9 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-/**
- * Representación de un producto en la tabla local `products` de Room.
- */
+
+
+
 @Entity(tableName = "products")
 data class ProductEntity(
     @PrimaryKey
@@ -25,5 +25,9 @@ data class ProductEntity(
     @ColumnInfo(name = "campaign_category", defaultValue = "'INTERIOR_DECORATION'")
     val campaignCategory: String,
     @ColumnInfo(name = "image_reference")
-    val imageReference: String? = null
+    val imageReference: String? = null,
+    @ColumnInfo(defaultValue = "''") val description: String = "",
+    @ColumnInfo(defaultValue = "'AVAILABLE'") val availability: String = "AVAILABLE",
+    @ColumnInfo(defaultValue = "1") val active: Boolean = true,
+    @ColumnInfo(defaultValue = "0") val stock: Int = 0
 )

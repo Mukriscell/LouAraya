@@ -8,7 +8,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
 
-/** Reloads on resume; ViewModels cancel superseded loads and retain their filter/selection state. */
+
 @Composable
 fun RefreshOnReturn(onReturn: () -> Unit) {
     val lifecycleOwner = LocalLifecycleOwner.current

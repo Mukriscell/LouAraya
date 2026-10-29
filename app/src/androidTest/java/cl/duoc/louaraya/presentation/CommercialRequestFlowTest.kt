@@ -1,105 +1,58 @@
 package cl.duoc.louaraya.presentation
 
-import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotSelected
-import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.espresso.Espresso.closeSoftKeyboard
-import androidx.test.espresso.Espresso.pressBack
 import cl.duoc.louaraya.MainActivity
-import org.junit.Assert.assertTrue
+import cl.duoc.louaraya.LouArayaApplication
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Verifica la navegación real y una reserva sintética persistida, sin cambiar estados administrativos. */
 @RunWith(AndroidJUnit4::class)
 class CommercialRequestFlowTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun reservePieceAndConsultItsStateAfterActivityRecreation() {
-        waitForText("Tapiz Demo Aurora")
-        compose.onNodeWithText("Tapiz Demo Aurora").performClick()
-        waitForText("Solicitar compra o reserva")
-        compose.onNodeWithText("Solicitar compra o reserva").performScrollTo().performClick()
-        waitForText("Reserva")
+        compose.signInDemo("cliente.demo")
+        compose.onNodeWithTag("tab-catalog").performClick()
+        compose.onNodeWithText("Tapiz Aurora").performScrollTo().performClick()
+        waitForText("Solicitar esta pieza")
+        compose.onNodeWithText("Solicitar esta pieza").performClick()
         compose.onNodeWithText("Reserva").performScrollTo().performClick()
-        compose.onNodeWithText("Campaña asociada: Decoración de Interiores").assertIsDisplayed()
-        compose.onNodeWithText("Comentario o requerimiento (opcional)")
-            .performScrollTo().performTextInput("Ambientación ficticia para prueba")
-        closeSoftKeyboard()
-        compose.onNodeWithText("Registrar intención").performScrollTo().performClick()
-        waitForText("Intención registrada")
-        compose.onNodeWithText("Campaña: Decoración de Interiores").assertIsDisplayed()
-        val number = compose.onNode(hasText("Solicitud #", substring = true))
-            .fetchSemanticsNode().config[SemanticsProperties.Text].first().text
-        compose.onNodeWithText("Estado: Pendiente").assertIsDisplayed()
-        compose.onNodeWithText("Ver solicitudes").performClick()
-        waitForText("$number · Reserva")
-        compose.onNodeWithText("$number · Reserva").performClick()
-        waitForText("Categoría: Decoración de Interiores")
-        compose.onNodeWithText("Categoría: Decoración de Interiores").assertIsDisplayed()
-        compose.onNodeWithText("Intención: Reserva").assertIsDisplayed()
-        compose.onNodeWithText("Requerimiento: Ambientación ficticia para prueba").performScrollTo().assertIsDisplayed()
+        val comment = "Reserva ficticia ${System.currentTimeMillis()}"
+        compose.onNodeWithText("Observaciones · opcional").performScrollTo().performTextInput(comment)
+        compose.onNodeWithText("Solicitar reserva").performClick()
+        waitForText("Solicitud registrada.")
+        compose.onNodeWithText("Ver solicitud").performScrollTo().performClick()
+        waitForText("Pendiente")
         compose.activityRule.scenario.recreate()
-        waitForText(number)
-        compose.onNodeWithText(number).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Estado: Pendiente").assertIsDisplayed()
-
-        pressBack()
-        waitForText("$number · Reserva")
-        pressBack()
-        waitForText("Catálogo")
-        compose.onNodeWithText("Tapiz Demo Aurora").performClick()
-        waitForText("Solicitar compra o reserva")
-        compose.onNodeWithText("Solicitar compra o reserva").performScrollTo().performClick()
-        waitForText("Registrar intención")
-        compose.onNodeWithText("Registrar intención").performScrollTo().assertIsDisplayed()
-        assertTrue(
-            compose.onAllNodes(hasText("Intención registrada"))
-                .fetchSemanticsNodes().isEmpty()
-        )
+        waitForText("Pendiente")
+        compose.onNodeWithText("$comment").performScrollTo().assertIsDisplayed()
+        val cases = (compose.activity.application as LouArayaApplication).container.localUseCases
+        assertEquals(comment, runBlocking { cases.snapshot().requests.first().comment })
     }
 
-    @Test
-    fun selectedCampaignSurvivesDetailBackAndFlowsIntoRequest() {
-        waitForText("Todos")
-        compose.onNodeWithText("Matrimonios").performClick().assertIsSelected()
-        compose.onNodeWithText("Todos").assertIsNotSelected()
-        waitForText("Camino de Mesa Demo")
-        compose.onNodeWithText("Camino de Mesa Demo").performClick()
-        waitForText("Camino de Mesa Demo")
-        compose.onNodeWithText("Matrimonios").assertIsDisplayed()
-
+    @Test fun selectedCategorySurvivesDetailBackAndReservationRetainsIt() {
+        compose.signInDemo("cliente.demo")
+        compose.onNodeWithTag("tab-catalog").performClick()
+        compose.onNode(hasText("Matrimonios") and hasClickAction()).performScrollTo().performClick().assertIsSelected()
+        compose.onNodeWithText("Camino de Mesa").performScrollTo().performClick()
+        waitForText("Solicitar esta pieza")
         compose.onNodeWithContentDescription("Volver").performClick()
-        waitForText("Todos")
-        compose.onNodeWithText("Matrimonios").assertIsSelected()
-        compose.onNodeWithText("Camino de Mesa Demo").performClick()
-        compose.onNodeWithText("Solicitar compra o reserva").performScrollTo().performClick()
-        waitForText("Campaña asociada: Matrimonios")
-        compose.onNodeWithText("Registrar intención").performScrollTo().performClick()
-        waitForText("Campaña: Matrimonios")
-        val number = compose.onNode(hasText("Solicitud #", substring = true))
-            .fetchSemanticsNode().config[SemanticsProperties.Text].first().text
-        compose.onNodeWithText("Ver solicitudes").performClick()
-
-        waitForText("$number · Compra")
-        compose.onNodeWithText("$number · Compra").performClick()
-        waitForText("Categoría: Matrimonios")
-        compose.onNodeWithText("Estado: Pendiente").assertIsDisplayed()
+        compose.onNode(hasText("Matrimonios") and hasClickAction()).assertIsSelected()
+        compose.onNodeWithText("Camino de Mesa").performScrollTo().performClick()
+        waitForText("Solicitar esta pieza")
+        compose.onNodeWithText("Solicitar esta pieza").performClick()
+        compose.onNodeWithText("Compra").performClick()
+        compose.onNodeWithText("Solicitar compra").performClick()
+        waitForText("Solicitud registrada.")
+        val cases = (compose.activity.application as LouArayaApplication).container.localUseCases
+        assertEquals("WEDDINGS", runBlocking { cases.snapshot().requests.first().campaignCategory?.name })
     }
-
     private fun waitForText(text: String) {
-        compose.waitUntil(10_000) {
-            compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
-        }
+        compose.waitUntil(15_000) { compose.onAllNodes(hasText(text) and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
     }
 }

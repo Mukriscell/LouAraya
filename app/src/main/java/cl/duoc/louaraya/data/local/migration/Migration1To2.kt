@@ -3,11 +3,11 @@ package cl.duoc.louaraya.data.local.migration
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-/** Añade solicitudes sin modificar ni eliminar los productos de la versión 1. */
+
 val MIGRATION_1_2 = object : Migration(1, 2) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL(
-            """
+"""
             CREATE TABLE IF NOT EXISTS commercial_requests (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 product_id INTEGER NOT NULL,

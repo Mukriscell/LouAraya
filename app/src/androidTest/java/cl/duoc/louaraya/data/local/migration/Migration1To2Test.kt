@@ -21,7 +21,7 @@ class Migration1To2Test {
         val file = context.getDatabasePath(name)
         file.parentFile?.mkdirs()
         try {
-            // Esquema real de v1, sin añadir dependencias ni exportaciones de esquema.
+
             SQLiteDatabase.openOrCreateDatabase(file, null).use { old ->
                 old.execSQL("""
                     CREATE TABLE products (
@@ -54,7 +54,7 @@ class Migration1To2Test {
             var purchaseId = 0L
             var reservationId = 0L
             val migrated = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build()
             try {
                 val product = migrated.productDao().getById(42)
                 assertEquals("Pieza ficticia conservada", product?.name)
@@ -67,7 +67,7 @@ class Migration1To2Test {
                 migrated.close()
             }
             val reopened = Room.databaseBuilder(context, LouArayaDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build()
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build()
             try {
                 assertEquals(purchase.copy(id = purchaseId), reopened.commercialRequestDao().getById(purchaseId))
                 assertEquals(reservation.copy(id = reservationId), reopened.commercialRequestDao().getById(reservationId))

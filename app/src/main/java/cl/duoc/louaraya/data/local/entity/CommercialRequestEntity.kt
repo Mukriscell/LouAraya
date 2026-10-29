@@ -5,8 +5,8 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/** Mantiene la referencia a la pieza aun si el catálogo cambia posteriormente. */
-@Entity(tableName = "commercial_requests", indices = [Index(value = ["product_id"])])
+
+@Entity(tableName = "commercial_requests", indices = [Index(value = ["product_id"]), Index(value = ["owner_id"])])
 data class CommercialRequestEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @ColumnInfo(name = "product_id") val productId: Long,
@@ -16,5 +16,13 @@ data class CommercialRequestEntity(
     val comment: String?,
     val total: Long,
     val status: String,
-    @ColumnInfo(name = "campaign_category") val campaignCategory: String?
+    @ColumnInfo(name = "campaign_category") val campaignCategory: String?,
+    @ColumnInfo(name = "owner_id", defaultValue = "1") val ownerId: Long = 1,
+    val customization: String? = null,
+    val campaignId: Long? = null,
+    val sourceCollectionId: Long? = null,
+    val journeyId: String? = null,
+    val agreedTotal: Long? = null,
+    val agreedAt: Long? = null,
+    @ColumnInfo(defaultValue = "1") val quantity: Int = 1
 )

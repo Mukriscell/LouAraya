@@ -5,9 +5,9 @@ import cl.duoc.louaraya.data.mapper.toDomain
 import cl.duoc.louaraya.domain.model.Product
 import cl.duoc.louaraya.domain.repository.ProductRepository
 
-/**
- * Implementación de [ProductRepository] respaldada por la base de datos local.
- */
+
+
+
 class ProductRepositoryImpl(
     private val productDao: ProductDao
 ) : ProductRepository {

@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel del catálogo. Carga los productos al crearse y expone el
- * resultado como [CatalogUiState].
- */
+
+
+
+
 class CatalogViewModel(
     private val getProductsUseCase: GetProductsUseCase
 ) : ViewModel() {

@@ -94,15 +94,15 @@ class AdminProductNavigationTest {
         compose.onNodeWithTag("pick-product-image").performClick()
         compose.waitUntil(5_000) { imageStorage.previewLoads > 0 }
         compose.onNodeWithTag("product-image-preview").assertIsDisplayed()
-        compose.onNodeWithTag("cancel-image-selection").performScrollTo().performClick()
+        compose.onNodeWithTag("cancel-image-selection").performClick()
         assertTrue(compose.onAllNodesWithTag("save-product-image").fetchSemanticsNodes().isEmpty())
         assertEquals(null, productRepository.product.imageReference)
         pickerRegistry.nextUri = Uri.parse("content://fictional-test-image")
         compose.onNodeWithTag("pick-product-image").performClick()
         compose.waitUntil(5_000) { imageStorage.previewLoads > 1 }
-        compose.onNodeWithTag("save-product-image").performScrollTo().performClick()
+        compose.onNodeWithTag("save-product-image").performClick()
         compose.onNodeWithText("Imagen guardada.").assertIsDisplayed()
-        compose.onNodeWithText("Volver a administración").performScrollTo().performClick()
+        compose.onNodeWithText("Volver a administración").performClick()
         compose.waitUntil(5_000) { imageStorage.loadedReferences.contains(NEW_REFERENCE) }
         imageStorage.loadedReferences.clear()
         compose.onNodeWithContentDescription("Volver").performClick()
@@ -164,7 +164,7 @@ class AdminProductNavigationTest {
         val refreshLoad = CompletableDeferred<List<Product>>()
         productRepository.suspendedProducts = refreshLoad
         compose.onNodeWithTag("edit-image-1").performClick()
-        compose.onNodeWithText("Imagen de producto").assertIsDisplayed()
+        compose.onNodeWithText("Fotografía").assertIsDisplayed()
         compose.onNodeWithContentDescription("Volver").performClick()
         compose.waitUntil(5_000) {
             compose.onAllNodesWithTag("admin-products-loading").fetchSemanticsNodes().isNotEmpty()
@@ -211,6 +211,7 @@ class AdminProductNavigationTest {
         )
         val productRepository = InMemoryProducts(product)
         val context = InstrumentationRegistry.getInstrumentation().targetContext
+        InstrumentationRegistry.getInstrumentation().uiAutomation.grantRuntimePermission(context.packageName, android.Manifest.permission.CAMERA)
         val imageStorage = TrackingLocalImageStorage(context)
         val fixture = context.resources.openRawResource(R.drawable.product_tapiz_aurora).use { it.readBytes() }
         val registry = CameraCaptureRegistry(context, fixture)
@@ -253,7 +254,7 @@ class AdminProductNavigationTest {
             compose.waitUntil(5_000) {
                 compose.onAllNodesWithTag("save-product-image").fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithTag("save-product-image").performScrollTo().performClick()
+            compose.onNodeWithTag("save-product-image").performClick()
             compose.waitUntil(5_000) {
                 compose.onAllNodesWithText("Imagen guardada.").fetchSemanticsNodes().isNotEmpty()
             }
@@ -266,7 +267,7 @@ class AdminProductNavigationTest {
                 captureDirectory.list()?.toSet().orEmpty() == capturesBefore
             }
 
-            compose.onNodeWithText("Volver a administración").performScrollTo().performClick()
+            compose.onNodeWithText("Volver a administración").performClick()
             compose.waitUntil(5_000) { imageStorage.loadedReferences.contains(persistedReference) }
             imageStorage.loadedReferences.clear()
             compose.onNodeWithContentDescription("Volver").performClick()

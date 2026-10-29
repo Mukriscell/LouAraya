@@ -41,6 +41,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import cl.duoc.louaraya.presentation.local.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -71,7 +73,7 @@ fun AdminProductCatalogScreen(
     val state by viewModel.uiState.collectAsState()
     Scaffold(topBar = {
         TopAppBar(
-            title = { Text("Administración demo") },
+            title = { Text("Administración") },
             navigationIcon = { IconButton(onClick = onBack) {
                 Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Volver")
             } }
@@ -99,7 +101,7 @@ fun AdminProductCatalogScreen(
                     ) {
                         item {
                             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("MVP académico; entrada de demostración sin autenticación.", style = MaterialTheme.typography.bodyMedium)
+                                Text("Administración del catálogo.", style = MaterialTheme.typography.bodyMedium)
                                 Text("Selecciona una pieza para asignar su imagen.", style = MaterialTheme.typography.bodyLarge)
                             }
                         }
@@ -156,6 +158,15 @@ fun AdminProductImageScreen(
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
         viewModel.onCameraCaptureResult(saved)
     }
+    var cameraDenied by remember { mutableStateOf(false) }
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        cameraDenied = !granted
+        if (granted) {
+            if ((state as? AdminProductImageUiState.Ready)?.pendingCameraUri == null) viewModel.prepareCameraCapture()
+            else viewModel.retryCameraCapture()
+        }
+    }
+    val context = androidx.compose.ui.platform.LocalContext.current
     val uiState = state
     val readyState = uiState as? AdminProductImageUiState.Ready
     val busy = readyState?.let { it.isSaving || it.isPreparingCameraCapture } == true
@@ -183,96 +194,38 @@ fun AdminProductImageScreen(
         }
     }
 
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text("Imagen de producto") },
-            navigationIcon = { IconButton(onClick = leaveEditor, enabled = !busy && !isLeaving) {
-                Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = "Volver")
-            } }
-        )
-    }) { padding ->
-        AdaptiveContentContainer(
-            windowSizeClass, LouArayaContentWidths.productDetail, Modifier.padding(padding)
-        ) {
+    Scaffold(topBar = { BrandHeader("Fotografía", back = leaveEditor) }) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
             when (uiState) {
-                AdminProductImageUiState.Loading -> CenteredAdmin { CircularProgressIndicator() }
-                is AdminProductImageUiState.Error -> CenteredAdmin {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(uiState.message, color = MaterialTheme.colorScheme.error)
-                        Button(onClick = viewModel::loadProduct) { Text("Reintentar") }
-                    }
-                }
+                AdminProductImageUiState.Loading -> Page { StateContent("Preparando la fotografía.", "Un momento…", loading = true) }
+                is AdminProductImageUiState.Error -> Page { StateContent("No pudimos abrir la fotografía.", uiState.message, action = "Reintentar", onAction = viewModel::loadProduct) }
                 is AdminProductImageUiState.Ready -> {
                     val ready = uiState
-                    Column(
-                        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
-                            .padding(vertical = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Text(ready.product.name, style = MaterialTheme.typography.headlineSmall)
-                        ProductImage(
-                            productId = ready.product.id,
-                            imageReference = ready.product.imageReference,
-                            storage = imageStorage,
-                            previewSourceUri = ready.previewSourceUri,
-                            modifier = Modifier.fillMaxWidth().aspectRatio(1.15f).testTag("product-image-preview"),
-                            contentDescription = "Vista previa de ${ready.product.name}",
-                            contentScale = ContentScale.Fit
-                        )
-                        Text("MVP académico: esta entrada de demostración no autentica un rol real.")
-                        Text("Las imágenes se guardan en el almacenamiento privado de esta aplicación.")
-                        OutlinedButton(
-                            enabled = !busy && !isLeaving && ready.pendingCameraUri == null,
-                            onClick = {
-                                picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                            },
-                            modifier = Modifier.fillMaxWidth().testTag("pick-product-image")
-                        ) { Text(if (ready.previewSourceUri == null) "Elegir desde galería" else "Elegir otra imagen desde galería") }
-                        OutlinedButton(
-                            enabled = !busy && !isLeaving &&
-                                (ready.pendingCameraUri == null || ready.cameraLaunchUri == null),
-                            onClick = {
-                                if (ready.pendingCameraUri == null) viewModel.prepareCameraCapture()
-                                else viewModel.retryCameraCapture()
-                            },
-                            modifier = Modifier.fillMaxWidth().testTag("take-product-photo")
-                        ) {
-                            Text(if (ready.pendingCameraUri == null) "Tomar fotografía" else "Reintentar fotografía")
-                        }
-                        if (ready.isPreparingCameraCapture) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                CircularProgressIndicator(modifier = Modifier.width(24.dp).height(24.dp))
-                                Text(" Preparando fotografía…")
-                            }
-                        } else if (ready.pendingCameraUri != null && ready.cameraLaunchUri == null) {
-                            Text("La captura está pendiente. Puedes volver a abrir la cámara o cancelarla.")
-                            TextButton(
-                                onClick = viewModel::cancelPendingCameraCapture,
-                                enabled = !isLeaving,
-                                modifier = Modifier.fillMaxWidth().testTag("cancel-camera-capture")
-                            ) { Text("Cancelar toma") }
-                        }
-                        ready.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                        if (ready.isSaved) Text("Imagen guardada.", color = MaterialTheme.colorScheme.primary)
+                    Page(maxWidth = LouArayaContentWidths.productDetail, footer = {
                         if (ready.previewSourceUri != null && !ready.isSaved) {
-                            TextButton(
-                                onClick = viewModel::cancelSelection,
-                                enabled = !busy && !isLeaving && ready.pendingCameraUri == null,
-                                modifier = Modifier.fillMaxWidth().testTag("cancel-image-selection")
-                            ) { Text("Cancelar selección") }
-                            Button(
-                                onClick = viewModel::saveImage,
-                                enabled = !busy && !isLeaving && ready.pendingCameraUri == null,
-                                modifier = Modifier.fillMaxWidth().testTag("save-product-image")
-                            ) {
-                                if (ready.isSaving) CircularProgressIndicator()
-                                else Text("Confirmar imagen")
-                            }
+                            Button(onClick = viewModel::saveImage, enabled = !busy && !isLeaving && ready.pendingCameraUri == null, shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth().height(56.dp).testTag("save-product-image")) { Text(if (ready.isSaving) "Guardando la imagen…" else if (ready.error != null) "Reintentar" else "Confirmar imagen") }
+                            TextButton(onClick = viewModel::cancelSelection, enabled = !busy && !isLeaving && ready.pendingCameraUri == null, modifier = Modifier.fillMaxWidth().testTag("cancel-image-selection")) { Text(if (ready.error != null) "Conservar foto actual" else "Cancelar selección") }
                         }
-                        if (ready.isSaved) Button(onClick = leaveEditor, enabled = !isLeaving, modifier = Modifier.fillMaxWidth()) {
-                            Text("Volver a administración")
+                        if (ready.isSaved) Action("Volver a administración", enabled = !isLeaving, onClick = leaveEditor)
+                    }) {
+                        Intro(if (ready.isSaved) "Todo listo" else if (ready.previewSourceUri != null) "Vista previa" else "La primera impresión", when { ready.isSaved -> "Imagen guardada."; ready.isSaving -> "Guardando la imagen."; ready.error != null && ready.previewSourceUri != null -> "No pudimos guardar\nla imagen."; ready.previewSourceUri != null -> "¿Usamos esta foto?"; else -> "Muéstrala\ncon luz natural." })
+                        ProductImage(ready.product.id, ready.product.imageReference, imageStorage, Modifier.fillMaxWidth().height(300.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(20.dp)).testTag("product-image-preview"), "Vista previa de ${ready.product.name}", ContentScale.Fit, previewSourceUri = ready.previewSourceUri)
+                        Text(ready.product.name, style = MaterialTheme.typography.titleLarge)
+                        if (ready.isSaving || ready.isPreparingCameraCapture) CircularProgressIndicator()
+                        if (ready.previewSourceUri == null && !ready.isSaved) {
+                            OutlinedButton(onClick = {
+                                if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.CAMERA) != android.content.pm.PackageManager.PERMISSION_GRANTED) cameraPermission.launch(android.Manifest.permission.CAMERA)
+                                else if (ready.pendingCameraUri == null) viewModel.prepareCameraCapture() else viewModel.retryCameraCapture()
+                            }, enabled = !busy && !isLeaving && (ready.pendingCameraUri == null || ready.cameraLaunchUri == null), modifier = Modifier.fillMaxWidth().height(56.dp).testTag("take-product-photo"), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { DesignIcon(R.drawable.la_camera); Spacer(Modifier.width(8.dp)); Text(if (ready.pendingCameraUri == null) "Tomar fotografía" else "Reintentar fotografía") }
+                            OutlinedButton(onClick = { picker.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }, enabled = !busy && !isLeaving && ready.pendingCameraUri == null, modifier = Modifier.fillMaxWidth().height(56.dp).testTag("pick-product-image"), shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)) { DesignIcon(R.drawable.la_image); Spacer(Modifier.width(8.dp)); Text("Elegir de galería") }
                         }
-                        Spacer(Modifier.height(8.dp))
+                        if (ready.pendingCameraUri != null && ready.cameraLaunchUri == null && !ready.isPreparingCameraCapture) {
+                            Note("La captura está pendiente. Puedes volver a abrir la cámara o cancelarla.")
+                            TextButton(onClick = viewModel::cancelPendingCameraCapture, enabled = !busy && !isLeaving, modifier = Modifier.fillMaxWidth().testTag("cancel-camera-capture")) { Text("Cancelar toma") }
+                        }
+                        if (cameraDenied) Note("Permite la cámara desde la configuración del perfil o elige una imagen de la galería.", error = true)
+                        ready.error?.let { Note(it, error = true) }
+                        if (ready.previewSourceUri == null && !ready.isSaved) Note("La fotografía se guarda al confirmar una imagen. Puedes cancelar y conservar la actual.")
                     }
                 }
             }

@@ -74,7 +74,7 @@ fun CommercialRequestDetailContent(
                         }
                         Text("Intención: ${request.intention.displayName()}")
                         Text("Fecha: ${formatRequestDate(request.date)}")
-                        Text("Cliente ficticio: ${request.anonymizedClient}")
+                        Text("Cliente: ${cl.duoc.louaraya.presentation.common.displayClientReference(request.anonymizedClient)}")
                         Text("Total registrado: ${formatClp(request.total)}")
                         Text("Requerimiento: ${request.comment ?: "Sin comentario"}")
                     }

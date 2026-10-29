@@ -45,12 +45,12 @@ import cl.duoc.louaraya.presentation.common.formatClp
 import cl.duoc.louaraya.presentation.common.formatCm
 import cl.duoc.louaraya.ui.theme.LouArayaTheme
 
-/**
- * Pantalla de detalle conectada a [ProductDetailViewModel].
- *
- * @param onBack se invoca al pulsar el botón de volver; quien aloja la
- * pantalla decide cómo navegar.
- */
+
+
+
+
+
+
 @Composable
 fun ProductDetailScreen(
     viewModel: ProductDetailViewModel,
@@ -72,9 +72,9 @@ fun ProductDetailScreen(
     )
 }
 
-/**
- * Contenido de la pantalla sin dependencia del ViewModel (facilita previews).
- */
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductDetailContent(
