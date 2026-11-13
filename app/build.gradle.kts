@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.android.junit)
 }
 
 android {
@@ -62,9 +63,19 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(platform(libs.androidx.compose.bom))
     testImplementation(libs.androidx.compose.ui.test.junit4)
-    testImplementation(libs.junit)
+    testImplementation(libs.junit4)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.kotest.runner)
+    testImplementation(libs.mockk)
+    testRuntimeOnly(libs.bytebuddy.core)
+    testRuntimeOnly(libs.bytebuddy.agent)
+    testRuntimeOnly(libs.junit.vintage.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
     androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(platform(libs.junit.bom))
+    androidTestImplementation(libs.junit.jupiter.api)
+    androidTestImplementation(libs.androidx.compose.ui.test.android)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

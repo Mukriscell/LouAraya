@@ -153,8 +153,8 @@ class FigmaScreensTest {
             compose.onNodeWithTag("tab-requests").performClick()
             shot("29-solicitudes-taller")
             compose.onNodeWithText("Solicitud #${requests.first().id} · ${requests.first().intention.let { if (it.name == "QUOTATION") "Cotización" else if (it.name == "PURCHASE") "Compra" else "Reserva" }}").performScrollTo().performClick()
-            RequestStatus.entries.forEach { status ->
-                compose.onNode(hasText(when (status) { RequestStatus.EXPLORATION -> "Exploración"; RequestStatus.PENDING -> "Pendiente"; RequestStatus.CONFIRMED -> "Confirmado"; RequestStatus.DELIVERED -> "Entregado" }) and hasClickAction()).performScrollTo().performClick()
+            RequestStatus.entries.filter { it != RequestStatus.CANCELLED }.forEach { status ->
+                compose.onNode(hasText(when (status) { RequestStatus.EXPLORATION -> "Exploración"; RequestStatus.PENDING -> "Pendiente"; RequestStatus.CONFIRMED -> "Confirmado"; RequestStatus.DELIVERED -> "Entregado"; RequestStatus.CANCELLED -> error("La cancelación se realiza desde el perfil del cliente") }) and hasClickAction()).performScrollTo().performClick()
                 compose.waitUntil(10_000) { runBlocking { cases.snapshot().requests.first { it.id == fixtureRequest.id }.status == status } }
                 shot("30-solicitud-${status.name.lowercase()}")
             }

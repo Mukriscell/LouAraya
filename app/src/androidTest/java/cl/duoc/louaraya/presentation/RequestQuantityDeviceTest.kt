@@ -7,6 +7,8 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import cl.duoc.louaraya.LouArayaApplication
@@ -42,7 +44,9 @@ class RequestQuantityDeviceTest {
     }
     private fun fill(label: String, value: String) {
         compose.onNodeWithText(label).performScrollTo().performTextReplacement(value)
-        Espresso.closeSoftKeyboard()
+        compose.activityRule.scenario.onActivity {
+            ViewCompat.getWindowInsetsController(it.window.decorView)?.hide(WindowInsetsCompat.Type.ime())
+        }
     }
     private fun shot(name: String) {
         compose.waitForIdle(); instrumentation.waitForIdleSync(); Thread.sleep(350)

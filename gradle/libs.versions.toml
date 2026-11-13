@@ -2,6 +2,11 @@
 agp = "9.4.1"
 coreKtx = "1.10.1"
 junit = "4.13.2"
+junit5 = "5.14.1"
+kotest = "5.9.1"
+mockk = "1.14.6"
+byteBuddy = "1.17.7"
+androidJunit = "2.0.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
 lifecycleRuntimeKtx = "2.6.1"
@@ -28,7 +33,16 @@ osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifInterface" }
-junit = { group = "junit", name = "junit", version.ref = "junit" }
+junit4 = { group = "junit", name = "junit", version.ref = "junit" }
+junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+bytebuddy-core = { module = "net.bytebuddy:byte-buddy", version.ref = "byteBuddy" }
+bytebuddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byteBuddy" }
+androidx-compose-ui-test-android = { module = "androidx.compose.ui:ui-test-android" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
@@ -49,6 +63,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 
 [plugins]
+android-junit = { id = "de.mannodermaus.android-junit", version.ref = "androidJunit" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

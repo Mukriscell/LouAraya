@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.os.Build
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -46,7 +45,9 @@ class RequirementsAuditTest {
     }
     private fun fill(label: String, text: String) {
         compose.onNodeWithText(label).performScrollTo().performTextReplacement(text)
-        closeSoftKeyboard()
+        compose.activityRule.scenario.onActivity {
+            ViewCompat.getWindowInsetsController(it.window.decorView)?.hide(WindowInsetsCompat.Type.ime())
+        }
         compose.waitUntil(10_000) {
             var hidden = false
             compose.activityRule.scenario.onActivity {
@@ -56,8 +57,9 @@ class RequirementsAuditTest {
         }
     }
     private fun click(text: String) {
-        compose.waitUntil(10_000) { compose.onAllNodes(hasText(text) and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        val node = compose.onNodeWithText(text).performScrollTo()
+        val action = hasText(text) and hasClickAction() and isEnabled()
+        compose.waitUntil(10_000) { compose.onAllNodes(action).fetchSemanticsNodes().isNotEmpty() }
+        val node = compose.onNode(action).performScrollTo()
         instrumentation.uiAutomation.waitForIdle(300, 5_000)
         node.assertIsDisplayed().performClick()
     }

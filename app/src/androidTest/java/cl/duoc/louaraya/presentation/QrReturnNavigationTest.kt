@@ -12,8 +12,7 @@ class QrReturnNavigationTest {
     @Test fun successfulLookupDoesNotBecomeAnErrorWhenReturningToScanner() {
         compose.signInDemo("cliente.demo")
         compose.onNodeWithText("Escanear QR").performScrollTo().performClick()
-        compose.onNodeWithText("Código de etiqueta").performScrollTo().performTextInput("louaraya://product/1")
-        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Código de etiqueta").performScrollTo().performTextReplacement("louaraya://product/1")
         compose.onNodeWithText("Consultar código").performScrollTo().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("Solicitar esta pieza").fetchSemanticsNodes().isNotEmpty()
@@ -40,8 +39,7 @@ class QrReturnNavigationTest {
     @Test fun unknownQrStillShowsItsRealErrorAndCanBeRetried() {
         compose.signInDemo("cliente.demo")
         compose.onNodeWithText("Escanear QR").performScrollTo().performClick()
-        compose.onNodeWithText("Código de etiqueta").performScrollTo().performTextInput("louaraya://product/999999")
-        androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.onNodeWithText("Código de etiqueta").performScrollTo().performTextReplacement("louaraya://product/999999")
         compose.onNodeWithText("Consultar código").performScrollTo().performClick()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("El código no existe o ya no está disponible.").fetchSemanticsNodes().isNotEmpty()
