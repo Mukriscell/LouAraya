@@ -5,9 +5,12 @@ Aplicación Android para explorar un catálogo de macramé y registrar solicitud
 ## Datos de la entrega
 
 - Estudiante: **Lucas Vasquez**.
+- Modalidad: desarrollo individual.
 - Asignatura: **DSY1105 · Desarrollo de Aplicaciones Móviles**.
 - Evaluación: **Control 3 · Encargo**.
 - Plataforma: Android, desde Android 7.0 (API 24).
+
+El tablero privado reúne las tareas de implementación, las pruebas y los pasos de entrega. [LouAraya en Trello](https://trello.com/b/McmaNL8q/louaraya-control-3) · [Registro de tareas y evidencias](docs/evidencias/CONTROL_3_TRELLO.md).
 
 ## Funcionalidades
 

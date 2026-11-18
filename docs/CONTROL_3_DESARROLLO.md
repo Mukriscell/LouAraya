@@ -93,8 +93,8 @@ La revisión pasó tres pruebas en un Motorola Edge 50 Fusion con Android 16. La
 | IE 3.1.4 · API externa | 15 % | Retrofit consulta Open-Meteo y muestra temperaturas y probabilidad de lluvia en la ficha de Ferias. El APK firmado comprobó el pronóstico en vivo para una feria próxima y el pronóstico de hoy para la ubicación de una feria pasada. Las pruebas ejercitan la consulta por fecha y el manejo de errores. |
 | IE 3.2.1 · Pruebas unitarias | 15 % | Pasaron 245 pruebas JVM. JaCoCo midió 1608 de 1980 líneas de lógica Android (81,21 %) y `verifyControl3LogicCoverage` aprobó el umbral del 80 %. |
 | IE 3.3.1 · APK firmado | 10 % | El APK release usa el JKS académico. `apksigner` valida la firma v2 y `keytool` identifica el mismo certificado en el almacén. |
-| IE 3.3.2 · GitHub y Trello | 15 % | El repositorio de origen es público. La rama local `codex/control-3` contiene los commits de microservicios e integración Android. Falta acreditar en Trello las tareas distribuidas y asociarlas con los commits técnicos de los dos integrantes. |
+| IE 3.3.2 · GitHub y Trello | 15 % | El repositorio de origen es público. La rama `codex/control-3` reúne los commits de la revisión. El [registro de Trello](evidencias/CONTROL_3_TRELLO.md) vincula las tareas del desarrollo individual de Lucas Vasquez con esos commits y los resultados de pruebas. |
 
-La pauta de entrega también solicita los datos de ambos integrantes y el número de equipo, el paquete grupal en AVA y la activación individual de la entrega. Consulta [requisitos del encargo](PLAN_CONTROL_3.md#entrega-del-encargo).
+La pauta estándar solicita evidencia de colaboración y contempla entrega grupal e individual en AVA. La modalidad individual queda pendiente de validación con el docente. Consulta los [requisitos del encargo](PLAN_CONTROL_3.md#entrega-del-encargo).
 
 El RAR de entrega reúne el código, el APK firmado, el informe JaCoCo y las evidencias. `LEEME_PRIMERO.md`, en la raíz del archivo, indica cómo ejecutar el APK. El JKS académico y los archivos TLS están en `04_Archivos_privados.rar`. Comunica su contraseña por el canal acordado con el docente.
