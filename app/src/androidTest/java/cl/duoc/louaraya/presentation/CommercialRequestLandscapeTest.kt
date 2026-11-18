@@ -96,10 +96,12 @@ class CommercialRequestLandscapeTest {
             val submit = compose.onNodeWithText("Solicitar reserva")
             saveKeyboardScreenshot()
             submit.assertIsDisplayed()
+            val unclipped = submit.getUnclippedBoundsInRoot()
+            val visible = submit.getBoundsInRoot()
             assertEquals(
                 "The keyboard layout clipped part of the submit button.",
-                submit.getUnclippedBoundsInRoot().height.value,
-                submit.getBoundsInRoot().height.value,
+                (unclipped.bottom - unclipped.top).value,
+                (visible.bottom - visible.top).value,
                 1f
             )
             assertTrue(
