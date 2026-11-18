@@ -367,7 +367,8 @@ internal class ConnectedLocalRepository(
         val fingerprint = connectionDigest("${account.userId}:$scope:${gson.toJson(body)}")
         val key = onDisk { storage.requestKey(fingerprint) }
         val result = try { operation(key) } catch (error: Exception) {
-            if (error is FormValidationException || (error is RemoteFailure && error.status in 400..499 && error.status !in setOf(408, 429))) {
+            // A renewed session can retry an operation that the server already received.
+            if (error is FormValidationException || (error is RemoteFailure && error.status in 400..499 && error.status !in setOf(401, 408, 429))) {
                 onDisk { storage.clearRequestKey(fingerprint) }
             }
             throw error

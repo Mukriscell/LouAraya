@@ -47,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
@@ -95,7 +96,7 @@ internal fun BrandHeader(title: String, back: (() -> Unit)? = null, profile: (()
 }
 
 @Composable
-internal fun Page(title: String? = null, maxWidth: Dp = 800.dp, footer: (@Composable () -> Unit)? = null, topPadding: Dp = 12.dp, footerDivider: Boolean = true, horizontalPadding: Dp = 24.dp, spacing: Dp = 12.dp, animated: Boolean = true, content: @Composable ColumnScope.() -> Unit) {
+internal fun Page(title: String? = null, maxWidth: Dp = 800.dp, footer: (@Composable () -> Unit)? = null, topPadding: Dp = 12.dp, footerDivider: Boolean = true, horizontalPadding: Dp = 24.dp, spacing: Dp = 12.dp, animated: Boolean = true, compactFooter: (@Composable () -> Unit)? = null, content: @Composable ColumnScope.() -> Unit) {
     var entered by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { entered = true }
     val progress by animateFloatAsState(if (!animated || entered) 1f else 0f, tween(AtelierMotion.PAGE, easing = androidx.compose.animation.core.FastOutSlowInEasing), label = "page-entry")
@@ -103,12 +104,17 @@ internal fun Page(title: String? = null, maxWidth: Dp = 800.dp, footer: (@Compos
 
 
         val horizontalFooter = footer != null && maxHeight < 240.dp && this.maxWidth >= 600.dp
+        val useCompactFooter = compactFooter != null && maxHeight < 100.dp
         Layout(modifier = Modifier.widthIn(max = maxWidth).fillMaxSize(), content = {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(horizontal = if (horizontalFooter) 16.dp else horizontalPadding).padding(top = topPadding, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(spacing)) {
                     if (title != null) Text(title, style = MaterialTheme.typography.headlineMedium)
                     content()
                 }
-                if (footer != null) Column(Modifier.background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState())) {
+                if (useCompactFooter && compactFooter != null) Box(
+                    Modifier.background(MaterialTheme.colorScheme.background).padding(horizontal = 12.dp),
+                    contentAlignment = Alignment.Center
+                ) { compactFooter() }
+                else if (footer != null) Column(Modifier.background(MaterialTheme.colorScheme.background).verticalScroll(rememberScrollState())) {
                     if (footerDivider) HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     Column(Modifier.padding(horizontal = if (horizontalFooter) 16.dp else 24.dp).padding(top = 12.dp, bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) { footer() }
                 }
@@ -140,10 +146,19 @@ internal fun Intro(eyebrow: String, title: String, description: String? = null) 
 }
 
 @Composable
-internal fun Action(label: String, enabled: Boolean = true, loading: Boolean = false, centered: Boolean = false, cornerRadius: Dp = 14.dp, onClick: () -> Unit) {
+internal fun Action(label: String, enabled: Boolean = true, loading: Boolean = false, centered: Boolean = false, cornerRadius: Dp = 14.dp, compact: Boolean = false, onClick: () -> Unit) {
     val source = remember { MutableInteractionSource() }
-    Button(onClick, Modifier.fillMaxWidth().heightIn(min = 52.dp).atelierPress(source, enabled && !LocalBusy.current && !loading)
-        .semantics { if (loading) stateDescription = "Procesando" }, enabled = enabled && !LocalBusy.current && !loading, interactionSource = source, shape = RoundedCornerShape(cornerRadius), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
+    Button(onClick, Modifier.fillMaxWidth().heightIn(min = if (compact) 48.dp else 52.dp).atelierPress(source, enabled && !LocalBusy.current && !loading)
+        .semantics { if (loading) stateDescription = "Procesando" }, enabled = enabled && !LocalBusy.current && !loading, interactionSource = source, shape = RoundedCornerShape(cornerRadius),
+        contentPadding = if (compact) PaddingValues(horizontal = 12.dp, vertical = 4.dp) else PaddingValues(horizontal = 16.dp, vertical = 14.dp)) {
+        if (compact) {
+            Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+            if (loading) {
+                Spacer(Modifier.width(8.dp))
+                CircularProgressIndicator(Modifier.size(20.dp).testTag("action-loading"), color = MaterialTheme.colorScheme.primary, strokeWidth = 2.dp)
+            }
+            return@Button
+        }
         if (centered) Spacer(Modifier.width(36.dp))
         Text(label, Modifier.weight(1f), style = MaterialTheme.typography.labelLarge, textAlign = if (centered) TextAlign.Center else TextAlign.Start)
         Spacer(Modifier.width(12.dp))

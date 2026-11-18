@@ -87,6 +87,10 @@ class MemberData {
                                 JOIN products p ON p.id = cp.product_id
                             WHERE f.owner_id = :actor AND f.target_type = 'COLLECTION'
                                 AND p.campaign_category = n.target_category
+                        ) OR EXISTS (
+                            SELECT 1 FROM favorites f JOIN campaigns c ON c.collection_id = f.target_id
+                            WHERE f.owner_id = :actor AND f.target_type = 'COLLECTION'
+                                AND n.destination = CONCAT('campaign/', c.id)
                         ))))
                     AND COALESCE(r.dismissed, false) = false
                 ORDER BY n.date DESC, n.id DESC

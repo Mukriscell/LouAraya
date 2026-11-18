@@ -136,7 +136,10 @@ class TallerIntegrationTest {
     }
 
     @Test
-    void campaignPushSelectsOnlyRegisteredOwnerAndPublisherFailureKeepsNotice() throws Exception {
+    void campaignReachesSavedCollectionOwnerAndPublisherFailureKeepsNotice() throws Exception {
+        // Seed collection 1 contains no WEDDINGS products. Saving it directly qualifies the client.
+        when(identities.requireProfile(CLIENT)).thenReturn(profile(1, Profile.Role.CLIENT, null));
+        perform(put("/favorites/collections/1"), CLIENT, Map.of("selected", true)).andExpect(status().isNoContent());
         when(push.enabled()).thenReturn(true);
         when(push.publish(any(), anyLong())).thenReturn(503);
         String endpoint = "http://10.0.2.2:8090/upTARGET000001?up=1";
@@ -162,11 +165,15 @@ class TallerIntegrationTest {
             }
         }
         assertThat(noticeId).isPositive();
+        mvc.perform(get("/snapshot").header("Authorization", OTHER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.notices[?(@.destination == 'campaign/" + campaign + "')]").isEmpty());
         verify(push, timeout(5_000).times(1)).publish(
                 new PushBroker.Subscription(endpoint, "target-key", "target-auth"), noticeId);
         verify(push, timeout(5_000).times(1)).publish(any(), org.mockito.ArgumentMatchers.eq(noticeId));
         mvc.perform(delete("/push/devices/device-1").header("Authorization", CLIENT)).andExpect(status().isNoContent());
         mvc.perform(delete("/push/devices/device-2").header("Authorization", OTHER)).andExpect(status().isNoContent());
+        perform(put("/favorites/collections/1"), CLIENT, Map.of("selected", false)).andExpect(status().isNoContent());
     }
 
     private long createProduct(String name) throws Exception {

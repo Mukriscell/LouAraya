@@ -5,6 +5,8 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -94,6 +96,12 @@ class CommercialRequestLandscapeTest {
             val submit = compose.onNodeWithText("Solicitar reserva")
             saveKeyboardScreenshot()
             submit.assertIsDisplayed()
+            assertEquals(
+                "The keyboard layout clipped part of the submit button.",
+                submit.getUnclippedBoundsInRoot().height.value,
+                submit.getBoundsInRoot().height.value,
+                1f
+            )
             assertTrue(
                 "The software keyboard closed before the submit action was checked.",
                 isKeyboardVisible()

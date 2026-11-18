@@ -151,6 +151,33 @@ class ConnectedLocalRepositoryTest {
         assertTrue(local.requests(null).isEmpty())
     }
 
+    @Test fun renewsAnExpiredSessionWithoutDuplicatingAnUncertainRequest() = runBlocking {
+        val bodies = mutableListOf<NewRequest>()
+        val expired = httpError(401, """{"message":"Sesión vencida"}""")
+        coEvery { workshop.createRequest(clientAuth, capture(bodies)) } throws IOException() andThenThrows expired
+        val connected = cases()
+        connected.initialize()
+        connected.signIn(client.alias, PASSWORD)
+
+        suspend fun request() = connected.createRequest(product.id, RequestIntention.PURCHASE, product.price, "Demo", null, quantity = 2)
+        assertEquals(0, (runCatching { request() }.exceptionOrNull() as RemoteFailure).status)
+        assertEquals(401, (runCatching { request() }.exceptionOrNull() as RemoteFailure).status)
+        coEvery { workshop.snapshot(clientAuth) } throws expired
+        connected.refreshConnection()
+        assertNull(connected.profile())
+
+        val newToken = "renewed-token"
+        val newAuth = "Bearer $newToken"
+        coEvery { identity.login(Credentials(client.alias, PASSWORD)) } returns AccountResponse(newToken, client)
+        coEvery { workshop.snapshot(newAuth) } returns snapshot(client)
+        coEvery { workshop.createRequest(newAuth, capture(bodies)) } returns order(51, client.id)
+        connected.signIn(client.alias, PASSWORD)
+
+        assertEquals(51L, request().id)
+        assertEquals(3, bodies.size)
+        assertEquals(1, bodies.map { it.idempotencyKey }.distinct().size)
+    }
+
     @Test fun stockAndStatusUseServerTransactionsAndExposeFieldErrors() = runBlocking {
         val order = order(22, client.id)
         coEvery { workshop.snapshot(adminAuth) } returns snapshot(admin, requests = listOf(order))

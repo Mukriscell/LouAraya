@@ -65,4 +65,6 @@ Ejecuta `.\mvnw.cmd -B -ntp test` en `backend`. Las pruebas MockMvc usan H2 aisl
 
 Con los servicios locales arriba, `pwsh -File .\backend\verify-postgres.ps1` crea una base temporal en PostgreSQL, ejecuta un recorrido HTTP con los tres roles y reinicia su propio proceso Taller para verificar persistencia. Usa una instancia temporal para dejar disponibles los puertos de la aplicación.
 
+Usa `-TallerJar <ruta>` para verificar una compilación de Taller distinta de la que está en ejecución.
+
 La verificación del 18 de noviembre de 2026 pasó con PostgreSQL 17.12. Después de reiniciar Taller, la pieza de prueba conservó el precio de $27.000, dos unidades de stock y su baja lógica. La solicitud siguió entregada por $54.000 con una sola salida de dos unidades. Se comprobaron los rechazos por rol, acceso desde otra cuenta y stock insuficiente, así como la repetición de las operaciones con la misma clave. También pasaron las tres pruebas de Identidad y las seis de Taller.

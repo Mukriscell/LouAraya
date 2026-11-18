@@ -2,13 +2,14 @@
 param(
     [int]$IdentityPort = 8081,
     [int]$VerificationPort = 18082,
-    [string]$DemoPassword = 'LouDemo2026!'
+    [string]$DemoPassword = 'LouDemo2026!',
+    [string]$TallerJar = (Join-Path $PSScriptRoot 'taller/target/taller-1.0.0.jar')
 )
 
 $ErrorActionPreference = 'Stop'
 $backend = $PSScriptRoot
-$jar = Join-Path $backend 'taller/target/taller-1.0.0.jar'
-if (-not (Test-Path -LiteralPath $jar)) { throw 'Compila Taller con Maven antes de ejecutar la verificación.' }
+if (-not (Test-Path -LiteralPath $TallerJar -PathType Leaf)) { throw 'Compila Taller con Maven antes de ejecutar la verificación.' }
+$jar = (Resolve-Path -LiteralPath $TallerJar).Path
 $envLine = Get-Content -LiteralPath (Join-Path $backend '.env') |
     Where-Object { $_ -like 'LOUARAYA_DB_PASSWORD=*' } | Select-Object -First 1
 if ($envLine -notmatch '^LOUARAYA_DB_PASSWORD=([A-Za-z0-9_-]{16,})$') { throw 'Falta configurar backend/.env.' }

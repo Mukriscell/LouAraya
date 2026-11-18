@@ -322,21 +322,23 @@ internal fun QuoteScreen(product: Product, vm: LocalAppViewModel, open: (String)
         Text("Qué sucede ahora", style = MaterialTheme.typography.labelMedium)
         Text("1. Tu solicitud queda pendiente de revisión.\n2. Consulta el estado en Mis solicitudes.\n3. El total acordado aparecerá cuando se registre.", color = MaterialTheme.colorScheme.secondary)
     } else key(step, quote) {
-        Page(maxWidth = 720.dp, footer = {
+        val primaryAction: @Composable (Boolean) -> Unit = { compact ->
             if (quote && step == 0) {
-                Action("Continuar con mi idea", loading = state.busy) {
+                Action("Continuar con mi idea", loading = state.busy, compact = compact) {
                     focus.clearFocus()
                     vm.execute(onSuccess = { step = 1 }) {
                         FormValidation.requestTotal(product.price, FormValidation.stockQuantity(quantity))
                         FormValidation.quotationPiece(width, length, material, colors)
                     }
                 }
-                Text("Siguiente: ocasión, fecha y comentarios", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
             } else {
-                Action(if (quote) "Registrar solicitud" else if (intention == RequestIntention.PURCHASE.name) "Solicitar compra" else "Solicitar reserva", loading = state.busy, onClick = submit)
-                Text("Consulta el estado en Mis solicitudes", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
+                Action(if (quote) "Registrar solicitud" else if (intention == RequestIntention.PURCHASE.name) "Solicitar compra" else "Solicitar reserva", loading = state.busy, compact = compact, onClick = submit)
             }
-        }) {
+        }
+        Page(maxWidth = 720.dp, footer = {
+            primaryAction(false)
+            Text(if (quote && step == 0) "Siguiente: ocasión, fecha y comentarios" else "Consulta el estado en Mis solicitudes", Modifier.fillMaxWidth(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary, textAlign = TextAlign.Center)
+        }, compactFooter = { primaryAction(true) }) {
             Intro(if (quote) "${if (step == 0) "01" else "02"} de 02 · ${if (step == 0) "Tu pieza" else "A tu medida"}" else "Una pieza para ti",
                 if (quote) if (step == 0) "Primero, la idea." else "Ahora, tu historia." else if (intention == RequestIntention.PURCHASE.name) "Quiero esta pieza." else "Guardemos tu idea.",
                 if (quote && step == 1) "Cuéntanos dónde imaginas esta pieza." else "Elige cómo te gustaría llevarla a tu espacio.")
