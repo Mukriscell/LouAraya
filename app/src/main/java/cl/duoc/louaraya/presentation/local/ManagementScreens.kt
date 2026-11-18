@@ -47,6 +47,7 @@ internal fun ProductManagementScreen(snapshot: LocalSnapshot, storage: ProductIm
 @Composable
 internal fun ProductEditorScreen(product: Product?, vm: LocalAppViewModel, done: () -> Unit, open: (String) -> Unit, storage: ProductImageStorage? = null) {
     var name by rememberSaveable { mutableStateOf(product?.name.orEmpty()) }; var description by rememberSaveable { mutableStateOf(product?.description.orEmpty()) }; var width by rememberSaveable { mutableStateOf(product?.widthCm?.let(::formatCm).orEmpty()) }; var length by rememberSaveable { mutableStateOf(product?.lengthCm?.let(::formatCm).orEmpty()) }; var material by rememberSaveable { mutableStateOf(product?.material.orEmpty()) }; var price by rememberSaveable { mutableStateOf(product?.price?.toString().orEmpty()) }; var category by rememberSaveable { mutableStateOf(product?.campaignCategory?.name ?: CampaignCategory.INTERIOR_DECORATION.name) }; var availability by rememberSaveable { mutableStateOf(product?.availability ?: "AVAILABLE") }; var active by rememberSaveable { mutableStateOf(product?.active ?: true) }
+    var confirmDeactivation by rememberSaveable { mutableStateOf(false) }
     val state by vm.uiState.collectAsState()
     Page(maxWidth = 720.dp, footer = { Action(if (state.fieldErrors.isEmpty()) "Guardar producto" else "Corregir producto") { vm.execute(message = "Producto guardado", onSuccess = done) {
         saveProduct(Product(product?.id ?: 0, name, FormValidation.dimension(width), FormValidation.dimension(length), material, FormValidation.productPrice(price), CampaignCategory.valueOf(category), product?.imageReference, description, availability, active))
@@ -67,8 +68,19 @@ internal fun ProductEditorScreen(product: Product?, vm: LocalAppViewModel, done:
         if (product != null) {
             DesignRow("Fotografía de la pieza", "Cámara o galería", "Editar fotografía", R.drawable.la_camera) { open("image/${product.id}") }
             Note("La desactivación conserva la fotografía y las solicitudes anteriores.")
+            if (product.active) SecondaryAction("Dar de baja") { confirmDeactivation = true }
         }
     }
+    if (confirmDeactivation && product != null) AlertDialog(
+        onDismissRequest = { confirmDeactivation = false },
+        title = { Text("Dar de baja la pieza") },
+        text = { Text("${product.name} dejará de aparecer en el catálogo. Se conservarán sus solicitudes anteriores.") },
+        confirmButton = { TextButton(onClick = {
+            confirmDeactivation = false
+            vm.execute(message = "Producto desactivado", onSuccess = done) { deactivateProduct(product.id) }
+        }) { Text("Confirmar baja") } },
+        dismissButton = { TextButton(onClick = { confirmDeactivation = false }) { Text("Volver") } }
+    )
 }
 
 @Composable

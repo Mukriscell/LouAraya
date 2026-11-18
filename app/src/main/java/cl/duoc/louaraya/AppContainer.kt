@@ -7,6 +7,11 @@ import cl.duoc.louaraya.data.local.migration.MIGRATION_7_8
 import cl.duoc.louaraya.data.local.migration.MIGRATION_8_9
 import cl.duoc.louaraya.data.local.migration.MIGRATION_9_10
 import cl.duoc.louaraya.data.repository.RoomLocalRepository
+import cl.duoc.louaraya.data.remote.AndroidConnectedStorage
+import cl.duoc.louaraya.data.remote.ConnectedLocalRepository
+import cl.duoc.louaraya.data.remote.IdentityApi
+import cl.duoc.louaraya.data.remote.WorkshopApi
+import cl.duoc.louaraya.data.remote.connectionDigest
 import cl.duoc.louaraya.domain.usecase.LocalUseCases
 import android.content.Context
 import androidx.room.Room
@@ -31,9 +36,15 @@ import cl.duoc.louaraya.domain.usecase.GetProductsUseCase
 import cl.duoc.louaraya.domain.usecase.UpdateProductImageUseCase
 import cl.duoc.louaraya.presentation.local.AndroidSystemNotifications
 import cl.duoc.louaraya.presentation.local.LocalNotificationCoordinator
+import cl.duoc.louaraya.push.CampaignPush
+import com.google.gson.GsonBuilder
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 
 
@@ -42,19 +53,51 @@ import kotlinx.coroutines.SupervisorJob
 
 
 class AppContainer(context: Context) {
+    private val appContext = context.applicationContext
+    private val identityUrl = appContext.getString(R.string.control3_identity_url)
+    private val tallerUrl = appContext.getString(R.string.control3_taller_url)
+    private val connectedScope = if (identityUrl.isNotBlank() && tallerUrl.isNotBlank()) {
+        connectionDigest("$identityUrl\n$tallerUrl").take(24)
+    } else null
 
     private val database: LouArayaDatabase by lazy {
         Room.databaseBuilder(
-            context.applicationContext,
+            appContext,
             LouArayaDatabase::class.java,
-            DATABASE_NAME
+            connectedScope?.let { "louaraya-control3-$it.db" } ?: DATABASE_NAME
         )
             .addCallback(DemoSeedCallback())
             .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
             .build()
     }
 
-    val localUseCases: LocalUseCases by lazy { LocalUseCases(RoomLocalRepository(database)) }
+    private val roomRepository by lazy { RoomLocalRepository(database) }
+    private val connectedRepository by lazy {
+        val scope = connectedScope ?: return@lazy null
+        val gson = GsonBuilder().serializeNulls().create()
+        val client = OkHttpClient.Builder()
+            .callTimeout(8, TimeUnit.SECONDS)
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .build()
+        fun retrofit(url: String) = Retrofit.Builder()
+            .baseUrl(url.trimEnd('/') + "/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+        ConnectedLocalRepository(
+            roomRepository, retrofit(identityUrl).create(IdentityApi::class.java),
+            retrofit(tallerUrl).create(WorkshopApi::class.java), AndroidConnectedStorage(appContext, scope, gson), gson,
+            forgetPushDevice = { userId -> campaignPush?.disconnect(userId) },
+            campaignPreferencesChanged = { profile -> campaignPush?.profileSaved(profile) }
+        )
+    }
+    internal val campaignPush: CampaignPush? by lazy {
+        val scope = connectedScope ?: return@lazy null
+        val repository = connectedRepository ?: return@lazy null
+        CampaignPush(appContext, scope, repository, AndroidSystemNotifications(appContext))
+    }
+    val localUseCases: LocalUseCases by lazy { LocalUseCases(connectedRepository ?: roomRepository) }
     internal val localNotificationCoordinator by lazy {
         LocalNotificationCoordinator(
             snapshots = { localUseCases.observeSnapshots() },
@@ -67,7 +110,7 @@ class AppContainer(context: Context) {
     val qrImageDecoder: QrImageDecoder by lazy { MlKitQrImageDecoder(context.applicationContext) }
 
     private val productRepository: ProductRepository by lazy {
-        ProductRepositoryImpl(database.productDao())
+        connectedRepository?.productImages() ?: ProductRepositoryImpl(database.productDao())
     }
 
     val getProductsUseCase: GetProductsUseCase by lazy {

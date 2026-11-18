@@ -20,12 +20,13 @@ class FigmaScreensTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
     private val cases get() = (compose.activity.application as LouArayaApplication).container.localUseCases
 
-    private fun waitFor(text: String) {
-        compose.waitUntil(20_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    private fun waitFor(vararg texts: String) {
+        compose.waitUntil(20_000) { texts.any { compose.onAllNodesWithText(it).fetchSemanticsNodes().isNotEmpty() } }
     }
     private fun click(text: String) {
-        compose.waitUntil(20_000) { compose.onAllNodes(hasText(text) and isEnabled()).fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText(text).performClick()
+        val action = hasText(text) and hasClickAction() and isEnabled()
+        compose.waitUntil(20_000) { compose.onAllNodes(action).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(action).performScrollTo().performClick()
     }
     private fun back() { compose.onNodeWithContentDescription("Volver").performClick() }
     private fun shot(name: String) {
@@ -96,7 +97,7 @@ class FigmaScreensTest {
         back()
         back()
         back()
-        compose.onNodeWithContentDescription("Mi perfil").performClick()
+        compose.openDemoProfile()
         shot("12-perfil")
         click("Guardar perfil")
         waitFor("Perfil actualizado.")
@@ -116,6 +117,8 @@ class FigmaScreensTest {
         shot("21-productos")
         click("Crear producto")
         shot("22-nueva-pieza")
+        compose.onNodeWithText("Precio de la pieza · CLP").performScrollTo().performTextInput("1")
+        androidx.test.espresso.Espresso.closeSoftKeyboard()
         click("Guardar producto")
         waitFor("Escribe un nombre de entre 2 y 100 caracteres.")
         shot("23-validacion-producto")
@@ -134,9 +137,10 @@ class FigmaScreensTest {
         compose.onAllNodes(isToggleable())[0].performClick()
         androidx.test.espresso.Espresso.closeSoftKeyboard()
         click("Guardar colección")
-        compose.onNodeWithText("Crear campaña").performScrollTo().performClick()
+        click("Crear campaña")
         shot("27-editor-campana")
-        compose.onNodeWithText("Nombre de campaña").performTextInput("Campaña de prueba")
+        val campaignName = "Campaña de prueba ${System.currentTimeMillis()}"
+        compose.onNodeWithText("Nombre de campaña").performTextInput(campaignName)
         compose.onNodeWithText("Inicio · AAAA-MM-DD").performScrollTo().performTextInput("2099-12-10")
         compose.onNodeWithText("Fin · AAAA-MM-DD").performScrollTo().performTextInput("2099-12-01")
         androidx.test.espresso.Espresso.closeSoftKeyboard()
@@ -144,10 +148,10 @@ class FigmaScreensTest {
         waitFor("La fecha final debe ser posterior o igual al inicio.")
         shot("28-validacion-campana")
         compose.onNodeWithText("Fin · AAAA-MM-DD").performScrollTo().performTextReplacement("2099-12-20")
-        compose.onNode(isToggleable()).performScrollTo().performClick()
         androidx.test.espresso.Espresso.closeSoftKeyboard()
+        compose.onNode(isToggleable()).performScrollTo().assertIsOff().performClick().assertIsOn()
         click("Guardar campaña")
-        compose.waitUntil(10_000) { runBlocking { cases.snapshot().campaigns.any { it.name == "Campaña de prueba" && it.published } } }
+        compose.waitUntil(10_000) { runBlocking { cases.snapshot().campaigns.any { it.name == campaignName && it.published } } }
         val requests = runBlocking { cases.snapshot().requests.filter { it.id == fixtureRequest.id } }
         if (requests.isNotEmpty()) {
             compose.onNodeWithTag("tab-requests").performClick()
@@ -173,7 +177,7 @@ class FigmaScreensTest {
         compose.onNodeWithText("Contraseña").performTextInput("clave-invalida")
         androidx.test.espresso.Espresso.closeSoftKeyboard()
         click("Iniciar sesión")
-        waitFor("Nombre de usuario o contraseña incorrectos.")
+        waitFor("Nombre de usuario o contraseña incorrectos.", "El nombre de usuario o la contraseña no coinciden.")
         shot("42-acceso-error")
         click("Crear cuenta")
         shot("43-registro")

@@ -24,7 +24,7 @@ class LocalAppViewModel(val useCases: LocalUseCases) : ViewModel() {
     private var observationGeneration = 0L
     init { initialize() }
     fun initialize() = execute(operation = { initialize() })
-    fun refresh() = execute(readOperation = true, operation = {})
+    fun refresh() = execute(readOperation = true, operation = { refreshConnection() })
     fun dismissError() { state.value = state.value.copy(error = null, message = null, fieldErrors = emptyMap()) }
     fun clearFieldError(key: String) { state.value = state.value.copy(fieldErrors = state.value.fieldErrors - key, error = null) }
 
@@ -50,7 +50,7 @@ class LocalAppViewModel(val useCases: LocalUseCases) : ViewModel() {
 
             try {
                 val snapshot = useCases.snapshot()
-                state.value = LocalAppState(initialized = true, snapshot = snapshot, message = message)
+                state.value = LocalAppState(initialized = true, snapshot = snapshot, message = message, readError = useCases.connectionWarning)
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -74,7 +74,7 @@ class LocalAppViewModel(val useCases: LocalUseCases) : ViewModel() {
                 try {
                     useCases.observeSnapshots().collect { snapshot ->
                         if (generation == observationGeneration) {
-                            state.value = state.value.copy(initialized = true, snapshot = snapshot, readError = null,
+                            state.value = state.value.copy(initialized = true, snapshot = snapshot, readError = useCases.connectionWarning,
                                 error = if (state.value.initialized) state.value.error else null)
                         }
                     }

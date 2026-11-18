@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,17 +36,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import cl.duoc.louaraya.R
+import cl.duoc.louaraya.data.weather.OpenMeteoForecastSource
 import cl.duoc.louaraya.domain.model.FairEvent
+import cl.duoc.louaraya.domain.model.FairForecastResult
+import cl.duoc.louaraya.domain.model.FairForecastResult.Period
+import cl.duoc.louaraya.domain.model.FairForecastResult.Reason
+import cl.duoc.louaraya.domain.model.FairForecastSource
 import kotlinx.coroutines.delay
 import java.text.ParsePosition
 import java.text.SimpleDateFormat
@@ -66,7 +79,7 @@ internal fun FairMapScreen(events: List<FairEvent>) {
             true
         }
     }
-    FairMapScreenContent(events, provider, opener, observeConnectivity = true)
+    FairMapScreenContent(events, provider, opener, observeConnectivity = true, forecastSource = OpenMeteoForecastSource.publicApi)
 }
 
 
@@ -74,9 +87,10 @@ internal fun FairMapScreen(events: List<FairEvent>) {
 internal fun FairMapScreen(
     events: List<FairEvent>,
     readinessProvider: FairMapReadinessProvider,
-    directionsOpener: FairMapDirectionsOpener
+    directionsOpener: FairMapDirectionsOpener,
+    forecastSource: FairForecastSource? = null
 ) {
-    FairMapScreenContent(events, readinessProvider, directionsOpener, observeConnectivity = false)
+    FairMapScreenContent(events, readinessProvider, directionsOpener, observeConnectivity = false, forecastSource = forecastSource)
 }
 
 internal fun validFairEvents(events: List<FairEvent>): List<FairEvent> = events.filter { event ->
@@ -128,7 +142,8 @@ private fun FairMapScreenContent(
     events: List<FairEvent>,
     readinessProvider: FairMapReadinessProvider,
     directionsOpener: FairMapDirectionsOpener,
-    observeConnectivity: Boolean
+    observeConnectivity: Boolean,
+    forecastSource: FairForecastSource?
 ) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
@@ -250,10 +265,14 @@ private fun FairMapScreenContent(
             }
 
             selectedEvent?.let { event ->
-                FairEventDetail(event, directionsError) {
-                    val url = fairDirectionsUrl(event)
-                    directionsError = url == null || try { !directionsOpener.open(url) } catch (_: RuntimeException) { true }
-                }
+                FairEventDetail(
+                    event, directionsError, readiness.validatedInternet, forecastSource,
+                    onRetryForecast = { refresh(false) },
+                    onDirections = {
+                        val url = fairDirectionsUrl(event)
+                        directionsError = url == null || try { !directionsOpener.open(url) } catch (_: RuntimeException) { true }
+                    }
+                )
             }
             Text("Ferias y showrooms", style = MaterialTheme.typography.titleLarge)
             events.forEach { event ->
@@ -280,7 +299,14 @@ private fun FairMapUnavailable(message: String, retry: (() -> Unit)?) {
 }
 
 @Composable
-private fun FairEventDetail(event: FairEvent, error: Boolean, onDirections: () -> Unit) {
+private fun FairEventDetail(
+    event: FairEvent,
+    error: Boolean,
+    online: Boolean,
+    forecastSource: FairForecastSource?,
+    onRetryForecast: () -> Unit,
+    onDirections: () -> Unit
+) {
     Surface(Modifier.fillMaxWidth().testTag("fair-event-detail-${event.id}"), color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(event.name, style = MaterialTheme.typography.titleLarge)
@@ -288,8 +314,93 @@ private fun FairEventDetail(event: FairEvent, error: Boolean, onDirections: () -
             Text(event.location.takeIf { it.isNotBlank() } ?: "Ubicación por confirmar", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
             if (fairDirectionsUrl(event) != null) Button(onDirections, Modifier.fillMaxWidth().testTag("fair-directions-${event.id}")) { Text("Cómo llegar") }
             if (error) Text("No pudimos abrir las indicaciones. Intenta de nuevo.", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            if (forecastSource != null) FairEventWeather(event, online, forecastSource, onRetryForecast)
         }
     }
+}
+
+@Composable
+private fun FairEventWeather(
+    event: FairEvent,
+    online: Boolean,
+    source: FairForecastSource,
+    refreshConnectivity: () -> Unit
+) {
+    var attempt by remember(event) { mutableIntStateOf(0) }
+    var result by remember(event, online, source, attempt) { mutableStateOf<FairForecastResult?>(null) }
+    LaunchedEffect(event, online, source, attempt) {
+        if (online) result = source.load(event)
+    }
+
+    Column(
+        Modifier.fillMaxWidth().padding(top = 8.dp).testTag("fair-forecast-${event.id}"),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        val forecastResult = result
+        val title = when ((forecastResult as? FairForecastResult.Available)?.period) {
+            Period.FAIR_DATE -> R.string.fair_forecast_title
+            Period.VENUE_TODAY -> R.string.fair_forecast_today_title
+            null -> R.string.fair_forecast_general_title
+        }
+        Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+        when {
+            !online -> Text(stringResource(R.string.fair_forecast_offline), style = MaterialTheme.typography.bodySmall)
+            forecastResult == null -> Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(stringResource(R.string.fair_forecast_loading), style = MaterialTheme.typography.bodySmall)
+            }
+            forecastResult is FairForecastResult.Available -> {
+                if (forecastResult.period == Period.VENUE_TODAY) {
+                    Text(formatFairEventDate(forecastResult.date), style = MaterialTheme.typography.bodySmall)
+                }
+                val forecast = forecastResult.forecast
+                Text(
+                    stringResource(R.string.fair_forecast_temperature, forecast.minimumCelsius, forecast.maximumCelsius),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    stringResource(R.string.fair_forecast_precipitation, forecast.maximumPrecipitationProbability),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                FairForecastAttribution()
+            }
+            forecastResult is FairForecastResult.Unavailable -> {
+                val message = when (forecastResult.reason) {
+                    Reason.INVALID_LOCATION -> R.string.fair_forecast_invalid
+                    Reason.NO_DATA -> R.string.fair_forecast_missing
+                    Reason.SERVICE_ERROR -> R.string.fair_forecast_error
+                }
+                Text(stringResource(message), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (!online || (forecastResult as? FairForecastResult.Unavailable)?.reason == Reason.SERVICE_ERROR) {
+            TextButton(
+                onClick = {
+                    refreshConnectivity()
+                    attempt++
+                },
+                modifier = Modifier.testTag("fair-forecast-retry")
+            ) {
+                Text(stringResource(R.string.fair_forecast_retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FairForecastAttribution() {
+    val linkStyle = TextLinkStyles(style = SpanStyle(color = MaterialTheme.colorScheme.primary, textDecoration = TextDecoration.Underline))
+    val credit = stringResource(R.string.fair_forecast_attribution)
+    val text = buildAnnotatedString {
+        append(credit)
+        withLink(LinkAnnotation.Url("https://open-meteo.com/", linkStyle)) { append("Open-Meteo") }
+        append(" · ")
+        withLink(LinkAnnotation.Url("https://creativecommons.org/licenses/by/4.0/", linkStyle)) { append("CC BY 4.0") }
+    }
+    Text(text, style = MaterialTheme.typography.bodySmall)
 }
 
 @Composable

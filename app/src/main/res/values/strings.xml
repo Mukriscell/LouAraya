@@ -1,3 +1,15 @@
 <resources>
     <string name="app_name">LouAraya</string>
+    <string name="fair_forecast_title">Pronóstico para la feria</string>
+    <string name="fair_forecast_today_title">Pronóstico de hoy en esta ubicación</string>
+    <string name="fair_forecast_general_title">Pronóstico</string>
+    <string name="fair_forecast_temperature">Temperatura entre %1$.1f y %2$.1f °C</string>
+    <string name="fair_forecast_precipitation">Hasta %1$d %% de probabilidad de precipitación</string>
+    <string name="fair_forecast_attribution">Datos de&#160;</string>
+    <string name="fair_forecast_loading">Consultando el pronóstico…</string>
+    <string name="fair_forecast_offline">Conéctate a Internet para consultar el pronóstico.</string>
+    <string name="fair_forecast_invalid">El pronóstico requiere una ubicación válida.</string>
+    <string name="fair_forecast_missing">Aún no hay datos meteorológicos para ese día.</string>
+    <string name="fair_forecast_error">No pudimos consultar el pronóstico ahora.</string>
+    <string name="fair_forecast_retry">Reintentar pronóstico</string>
 </resources>

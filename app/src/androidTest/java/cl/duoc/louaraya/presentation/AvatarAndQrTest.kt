@@ -54,7 +54,7 @@ class AvatarAndQrTest {
 
     @Test fun eightAvatarsPersistAndPhotoScreenCanBeCancelled() {
         compose.signInDemo("cliente.demo")
-        compose.onNodeWithContentDescription("Mi perfil").performClick()
+        compose.openDemoProfile()
         compose.onNodeWithTag("avatar-7").performScrollTo().performClick()
         shot("01-ocho-avatares")
         compose.onNodeWithText("Guardar perfil").performClick()
@@ -84,7 +84,7 @@ class AvatarAndQrTest {
         instrumentation.uiAutomation.serviceInfo = instrumentation.uiAutomation.serviceInfo.apply { flags = flags or android.accessibilityservice.AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS }
 
         instrumentation.uiAutomation.executeShellCommand("pm grant ${compose.activity.packageName} android.permission.CAMERA").use { android.os.ParcelFileDescriptor.AutoCloseInputStream(it).readBytes() }
-        compose.onNodeWithContentDescription("Mi perfil").performClick()
+        compose.openDemoProfile()
         val cameraLabel = if (user.avatarImageReference == null) "Tomar mi foto" else "Cambiar mi foto"
         compose.onNodeWithText(cameraLabel).performScrollTo().performClick()
         compose.onNodeWithText("Abrir cámara").performScrollTo().performClick()

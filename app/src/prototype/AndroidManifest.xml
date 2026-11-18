@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application android:usesCleartextTraffic="true" android:allowBackup="false"
+        tools:replace="android:allowBackup" tools:remove="android:networkSecurityConfig">
+        <activity android:name=".MainActivity" tools:node="remove" />
+        <activity android:name=".prototype.SyncActivity" android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

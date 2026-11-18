@@ -2,10 +2,12 @@ package cl.duoc.louaraya.domain.usecase
 
 import cl.duoc.louaraya.domain.model.*
 import cl.duoc.louaraya.domain.model.Collection
+import cl.duoc.louaraya.domain.repository.ConnectedBusinessRepository
 import cl.duoc.louaraya.domain.repository.LocalRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -18,30 +20,41 @@ data class QuotationDetails(val event: String, val widthCm: Double, val lengthCm
 
 
 class LocalUseCases(private val repository: LocalRepository, private val now: () -> Long = System::currentTimeMillis) {
+    private val connected = repository as? ConnectedBusinessRepository
+    val connectionWarning: String? get() = connected?.connectionWarning
     suspend fun initialize() = repository.initialize()
     suspend fun profile() = repository.session()
+    suspend fun refreshConnection() { connected?.refreshConnected(force = true) }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    fun observeSnapshots(): Flow<LocalSnapshot> = repository.observeChanges()
-        .mapLatest { snapshot() }
-        .distinctUntilChanged()
+    fun observeSnapshots(): Flow<LocalSnapshot> {
+        val changes = repository.observeChanges()
+        return if (connected != null) changes.map { snapshot() }
+        else changes.mapLatest { snapshot() }.distinctUntilChanged()
+    }
 
-    suspend fun snapshot(): LocalSnapshot = repository.transaction {
-        val actor = repository.session() ?: return@transaction LocalSnapshot()
-        LocalSnapshot(actor, repository.products(), repository.requests(if (actor.role == UserRole.ADMIN) null else actor.id),
-            if (actor.role == UserRole.CLIENT) repository.favoriteIds(actor.id) else emptySet(),
-            repository.collections(), repository.campaigns(), repository.events(), repository.notices(actor.id),
-            if (actor.role == UserRole.CLIENT) repository.favoriteCollectionIds(actor.id) else emptySet(),
-            repository.journeys(if (actor.role == UserRole.ADMIN) null else actor.id),
-            repository.explorationEvents(if (actor.role == UserRole.ADMIN) null else actor.id),
-            if (actor.role == UserRole.ADMIN) repository.stockMovements() else emptyList(),
-            if (actor.role == UserRole.ADMIN) repository.hiddenRequestIds(actor.id) else emptySet())
+    suspend fun snapshot(): LocalSnapshot {
+        connected?.refreshConnected()
+        return repository.transaction {
+            val actor = repository.session() ?: return@transaction LocalSnapshot()
+            LocalSnapshot(actor, repository.products(), repository.requests(if (actor.role == UserRole.ADMIN) null else actor.id),
+                if (actor.role == UserRole.CLIENT) repository.favoriteIds(actor.id) else emptySet(),
+                repository.collections(), repository.campaigns(), repository.events(), repository.notices(actor.id),
+                if (actor.role == UserRole.CLIENT) repository.favoriteCollectionIds(actor.id) else emptySet(),
+                repository.journeys(if (actor.role == UserRole.ADMIN) null else actor.id),
+                repository.explorationEvents(if (actor.role == UserRole.ADMIN) null else actor.id),
+                if (actor.role == UserRole.ADMIN) repository.stockMovements() else emptyList(),
+                if (actor.role == UserRole.ADMIN) repository.hiddenRequestIds(actor.id) else emptySet())
+        }
     }
     suspend fun signIn(alias: String, password: String): UserProfile {
         fieldRequire(alias.isNotBlank(), "alias", "Escribe tu nombre de usuario.")
         fieldRequire(password.isNotBlank(), "password", "Escribe tu contraseña.")
-        return try { repository.signIn(normalizeAlias(alias), password) }
+        val profile = try { repository.signIn(normalizeAlias(alias), password) }
+        catch (error: FormValidationException) { throw error }
         catch (error: IllegalArgumentException) { throw FormValidationException(mapOf("password" to (error.message ?: "El nombre de usuario o la contraseña no coinciden."))) }
+        connected?.refreshConnected()
+        return profile
     }
     suspend fun register(name: String, alias: String, password: String, avatar: Int, contact: String, avatarImageReference: String? = null): UserProfile = repository.transaction {
         fieldRequire(name.trim().length in 2..80, "name", "Escribe un nombre de entre 2 y 80 caracteres.")
@@ -136,12 +149,24 @@ class LocalUseCases(private val repository: LocalRepository, private val now: ()
         require(product.id == 0L || previous != null) { "El producto no existe." }
         repository.saveProduct(product.copy(name = product.name.trim(), material = product.material.trim(), imageReference = previous?.imageReference, stock = previous?.stock ?: 0))
     }
+
+    suspend fun deactivateProduct(productId: Long) = repository.transaction {
+        actor(UserRole.ADMIN)
+        val product = requireNotNull(repository.products().firstOrNull { it.id == productId }) { "El producto no existe." }
+        if (connected != null) connected.deactivateProduct(productId)
+        else repository.saveProduct(product.copy(active = false))
+    }
+
     suspend fun changeStock(productId: Long, quantity: Int, type: StockMovementType, note: String = "") = repository.transaction {
         val actor = actor(UserRole.ADMIN)
         fieldRequire(quantity > 0, "quantity", "Escribe una cantidad entera mayor a cero.")
         fieldRequire(note.trim().length <= 250, "stockNote", "La observación admite hasta 250 caracteres.")
         require(type in setOf(StockMovementType.ENTRY, StockMovementType.DIRECT_SALE, StockMovementType.WITHDRAWAL)) { "Selecciona un movimiento válido." }
         val product = requireNotNull(repository.products().firstOrNull { it.id == productId }) { "El producto no existe." }
+        if (connected != null) {
+            connected.changeStock(productId, quantity, type, note.trim())
+            return@transaction
+        }
         val delta = if (type == StockMovementType.ENTRY) quantity else -quantity
         fieldRequire(repository.adjustStock(productId, delta), "quantity",
             if (delta < 0) "Stock insuficiente: hay ${product.stock} unidades en bodega." else "La cantidad supera el máximo permitido en bodega.")
@@ -165,7 +190,7 @@ class LocalUseCases(private val repository: LocalRepository, private val now: ()
         val old = repository.campaigns().firstOrNull { it.id == campaign.id }
         require(campaign.id == 0L || old != null)
         val id = repository.saveCampaign(campaign.copy(name = campaign.name.trim()))
-        if (campaign.published && old?.published != true) {
+        if (connected == null && campaign.published && old?.published != true) {
             val products = repository.products()
             val collections = repository.collections()
             repository.profiles().filter { it.role == UserRole.CLIENT && it.notificationsEnabled }.forEach { client ->
@@ -196,11 +221,17 @@ class LocalUseCases(private val repository: LocalRepository, private val now: ()
             val today = Calendar.getInstance().apply { timeInMillis = now(); set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0) }.timeInMillis
             fieldRequire(formDay(details.requiredOn, "date") >= today, "date", "La fecha deseada no puede ser anterior a hoy.")
         }
-        val request = repository.saveRequest(CommercialRequest(0, now(), "CLIENTE-${actor.id}", total, RequestStatus.PENDING,
-            product.id, intention, comment.trim().takeIf { it.isNotEmpty() }, product.campaignCategory, actor.id, if (intention == RequestIntention.QUOTATION) details?.summary() else null,
-            campaignId = journey?.campaignId, sourceCollectionId = journey?.collectionId, journeyId = journey?.id, quantity = quantity))
+        val request = if (connected != null) {
+            connected.createRequest(productId, intention, displayedPrice, comment.trim(), details, journey, quantity)
+        } else {
+            repository.saveRequest(CommercialRequest(0, now(), "CLIENTE-${actor.id}", total, RequestStatus.PENDING,
+                product.id, intention, comment.trim().takeIf { it.isNotEmpty() }, product.campaignCategory, actor.id, if (intention == RequestIntention.QUOTATION) details?.summary() else null,
+                campaignId = journey?.campaignId, sourceCollectionId = journey?.collectionId, journeyId = journey?.id, quantity = quantity))
+        }
         trace(actor, ExplorationKind.REQUEST_CREATED, journey, productId = product.id, requestId = request.id)
-        repository.profiles().filter { it.role == UserRole.ADMIN }.forEach { notice(it.id, "Nueva solicitud #${request.id}", product.name, "request/${request.id}", "request/${request.id}") }
+        if (connected == null) {
+            repository.profiles().filter { it.role == UserRole.ADMIN }.forEach { notice(it.id, "Nueva solicitud #${request.id}", product.name, "request/${request.id}", "request/${request.id}") }
+        }
         request
     }
 
@@ -211,14 +242,21 @@ class LocalUseCases(private val repository: LocalRepository, private val now: ()
         require(request.status != RequestStatus.CANCELLED) { "La solicitud está cancelada. No se puede modificar su importe." }
         if (request.agreedTotal != amount) {
             val date = now()
-            repository.updateAgreement(request.id, amount, date)
+            if (connected != null) connected.agreeTotal(request.id, amount)
+            else repository.updateAgreement(request.id, amount, date)
             repository.recordExploration(ExplorationEvent(UUID.randomUUID().toString(), request.ownerId, ExplorationKind.AMOUNT_AGREED, date,
                 request.journeyId, request.campaignId, request.sourceCollectionId, request.productId, request.id, amount))
-            notice(request.ownerId, "Importe de solicitud #${request.id}", "El taller registró un importe acordado de $$amount CLP. Consulta tu solicitud.", "request/${request.id}", "agreement/${request.id}/${UUID.randomUUID()}")
+            if (connected == null) {
+                notice(request.ownerId, "Importe de solicitud #${request.id}", "El taller registró un importe acordado de $$amount CLP. Consulta tu solicitud.", "request/${request.id}", "agreement/${request.id}/${UUID.randomUUID()}")
+            }
         }
     }
     suspend fun updateStatus(id: Long, status: RequestStatus) = repository.transaction {
         val actor = actor(UserRole.ADMIN)
+        if (connected != null) {
+            repository.updateStatus(id, status)
+            return@transaction
+        }
         val request = requireNotNull(repository.request(id)) { "La solicitud no existe." }
         require(request.status != RequestStatus.CANCELLED || status == RequestStatus.CANCELLED) { "La solicitud está cancelada y no puede reactivarse." }
         if (request.status != status) {
@@ -278,11 +316,14 @@ class LocalUseCases(private val repository: LocalRepository, private val now: ()
         require(request.ownerId == actor.id) { "Solo puedes cancelar tus propias solicitudes." }
         if (request.status != RequestStatus.CANCELLED) {
             validateCancellation(request)
-            repository.updateStatus(id, RequestStatus.CANCELLED)
+            if (connected != null) connected.cancelRequest(id)
+            else repository.updateStatus(id, RequestStatus.CANCELLED)
             repository.recordExploration(ExplorationEvent(UUID.randomUUID().toString(), actor.id, ExplorationKind.REQUEST_CANCELLED, now(),
                 request.journeyId, request.campaignId, request.sourceCollectionId, request.productId, request.id))
-            repository.profiles().filter { it.role == UserRole.ADMIN }.forEach {
-                notice(it.id, "Solicitud #$id cancelada", "El cliente canceló su solicitud. No se descontaron existencias.", "request/$id", "cancel/$id")
+            if (connected == null) {
+                repository.profiles().filter { it.role == UserRole.ADMIN }.forEach {
+                    notice(it.id, "Solicitud #$id cancelada", "El cliente canceló su solicitud. No se descontaron existencias.", "request/$id", "cancel/$id")
+                }
             }
         }
     }

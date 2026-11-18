@@ -167,7 +167,7 @@ internal fun CatalogScreen(snapshot: LocalSnapshot, storage: ProductImageStorage
         if (collection != null && snapshot.profile?.role == UserRole.CLIENT) SecondaryAction(if (collection.id in snapshot.favoriteCollectionIds) "Quitar colección de favoritos" else "Guardar colección") {
             vm.execute { setFavoriteCollection(collection.id, collection.id !in snapshot.favoriteCollectionIds, journeyId) }
         }
-        if (state.readError != null) StateContent("No pudimos cargar\nlas piezas.", "Inténtalo de nuevo para continuar explorando.", action = "Reintentar", onAction = vm::refresh)
+        if (state.readError != null && snapshot.products.isEmpty()) StateContent("No pudimos cargar\nlas piezas.", "Inténtalo de nuevo para continuar explorando.", action = "Reintentar", onAction = vm::refresh)
         else if (state.busy && base.isEmpty()) StateContent("Preparando tus piezas.", "Estamos cargando el catálogo.", loading = true)
         else if (base.isEmpty() && favoritesOnly && collections.isNotEmpty()) Text("Aún no guardas piezas individuales. Tus colecciones están más abajo.")
         else if (base.isEmpty()) StateContent(if (favoritesOnly) "Tu próxima favorita\nte espera." else "Pronto habrá\nnuevas historias.", if (favoritesOnly) "Aún no guardas piezas. Toca el corazón de un diseño para encontrarlo aquí." else "No hay productos disponibles.", if (favoritesOnly) R.drawable.la_heart else R.drawable.la_leaf, action = if (favoritesOnly) "Explorar catálogo" else "Volver al inicio") { open(if (favoritesOnly) "catalog" else "home") }
@@ -461,7 +461,10 @@ internal fun RequestScreen(request: CommercialRequest, snapshot: LocalSnapshot, 
 }
 
 @Composable
-internal fun ProfileScreen(profile: UserProfile, vm: LocalAppViewModel, open: (String) -> Unit, storage: ProductImageStorage) {
+internal fun ProfileScreen(
+    profile: UserProfile, vm: LocalAppViewModel, open: (String) -> Unit, storage: ProductImageStorage,
+    campaignPush: cl.duoc.louaraya.push.CampaignPush? = null
+) {
     val context = LocalContext.current
     var alias by rememberSaveable(profile.id) { mutableStateOf(profile.alias) }; var name by rememberSaveable(profile.id) { mutableStateOf(profile.name) }; var contact by rememberSaveable(profile.id) { mutableStateOf(profile.contact) }; var avatar by rememberSaveable(profile.id) { mutableIntStateOf(profile.avatar) }; var notices by rememberSaveable(profile.id) { mutableStateOf(profile.notificationsEnabled) }; var category by rememberSaveable(profile.id) { mutableStateOf(profile.preferredCategory ?: "ALL") }; var saved by rememberSaveable { mutableStateOf(false) }
     var usePreset by rememberSaveable(profile.id) { mutableStateOf(false) }
@@ -483,7 +486,10 @@ internal fun ProfileScreen(profile: UserProfile, vm: LocalAppViewModel, open: (S
         FormField(vm, "name", "Nombre", name, { name = it }); FormField(vm, "alias", "Nombre de Usuario", alias, { alias = it }); FormField(vm, "contact", "Contacto · opcional", contact, { contact = it }, hint = "Puedes dejarlo vacío o indicar un correo o teléfono.")
         if (profile.role == UserRole.CLIENT) { Text("Categoría preferida", style = MaterialTheme.typography.labelLarge); Choices(listOf("ALL") + designCategories.map { it.name }, category, { if (it == "ALL") "Todas" else CampaignCategory.valueOf(it).displayName }) { category = it } }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { Text("Recibir avisos", Modifier.weight(1f)); Switch(notices, { notices = it }, enabled = !LocalBusy.current) }
-        NotificationPermissionButton(); PermissionSummary(); SecondaryAction("Cerrar sesión / cambiar usuario") { vm.execute(onSuccess = { AndroidSystemNotifications(context).clear() }) { signOut() } }
+        NotificationPermissionButton()
+        if (profile.role == UserRole.CLIENT && campaignPush != null) CampaignPushPreferences(profile, campaignPush)
+        PermissionSummary()
+        SecondaryAction("Cerrar sesión / cambiar usuario") { vm.execute(onSuccess = { AndroidSystemNotifications(context).clear() }) { signOut() } }
     }
 }
 

@@ -13,6 +13,7 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
+        android:networkSecurityConfig="${control3NetworkPolicy}"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -27,6 +28,15 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <service android:name=".push.CampaignPushService" android:exported="false">
+            <intent-filter>
+                <action android:name="org.unifiedpush.android.connector.PUSH_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".push.CampaignPushJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

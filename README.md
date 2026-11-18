@@ -6,7 +6,7 @@ Aplicación Android para explorar un catálogo de macramé y registrar solicitud
 
 - Estudiante: **Lucas Vasquez**.
 - Asignatura: **DSY1105 · Desarrollo de Aplicaciones Móviles**.
-- Evaluación: **Parcial 2 · Encargo**.
+- Evaluación: **Control 3 · Encargo**.
 - Plataforma: Android, desde Android 7.0 (API 24).
 
 ## Funcionalidades
@@ -19,11 +19,11 @@ Aplicación Android para explorar un catálogo de macramé y registrar solicitud
 - Bodega por producto con entradas, ventas directas, retiros e historial; descuento al entregar compras o reservas.
 - Registro del importe acordado y consulta de resultados de campañas.
 - Lectura de etiquetas QR desde cámara, imagen o código ingresado manualmente.
-- Mapa de ferias con OpenStreetMap, listado y apertura de indicaciones externas.
-- Bandeja de avisos por usuario y notificaciones locales de Android.
+- Mapa de ferias con OpenStreetMap, pronóstico de Open-Meteo e indicaciones externas.
+- Bandeja de avisos por usuario y entrega opcional de campañas en segundo plano mediante ntfy.
 - Transiciones de navegación, entradas escalonadas del catálogo, respuesta al pulsar botones, favoritos animados y cambios de saldo en bodega.
 
-Los datos de negocio se guardan en el dispositivo. Esta entrega no sincroniza información entre teléfonos ni procesa pagos. Las notificaciones se generan localmente.
+La configuración local guarda los datos de negocio en el dispositivo. La configuración conectada del Control 3 sincroniza el catálogo y las operaciones del taller entre sesiones. La app registra solicitudes comerciales y genera avisos para el perfil activo.
 
 ## Tecnologías y estructura
 
@@ -103,6 +103,29 @@ Para colecciones se usa louaraya://collection/ID, con el identificador de una co
 
 El mapa no requiere clave de API ni facturación. Los mosaicos nuevos necesitan Internet; el listado de ferias ficticias permanece disponible localmente. La app no solicita ubicación para consultar eventos. “Cómo llegar” abre una aplicación o página externa de mapas.
 
+## Desarrollo del Control 3
+
+La app admite una configuración conectada a dos servicios Spring Boot. Los datos comerciales compartidos se guardan en PostgreSQL. La instalación conectada usa una base Room y una caché separadas de la instalación local. Consulta [cómo arrancar los servicios, compilar para el emulador y generar el APK firmado](docs/CONTROL_3_DESARROLLO.md).
+
+Con Docker Desktop iniciado, estos comandos levantan el backend con avisos de campaña y compilan la app conectada. Ejecútalos desde la raíz.
+
+```powershell
+pwsh -File backend/start-local.ps1 -WithPush
+.\gradlew.bat :app:assembleDebug `
+  '-PlouArayaIdentityUrl=http://10.0.2.2:8081/' `
+  '-PlouArayaTallerUrl=http://10.0.2.2:8082/'
+```
+
+| Servicio | Endpoints utilizados |
+| --- | --- |
+| Identidad (`8081`) | `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `GET/PATCH /profiles/me` |
+| Taller (`8082`) | `GET /snapshot`, CRUD `/products`, alta y edición de `/collections` y `/campaigns`, `/requests`, `/products/{id}/stock-movements`, `/favorites`, `/notices` y `/push/devices/{installationId}` |
+| Open-Meteo | `GET https://api.open-meteo.com/v1/forecast`, con coordenadas de la feria, fecha y variables diarias de temperatura y precipitación |
+
+El [contrato completo del backend](backend/README.md#api) documenta los métodos, los campos y la autenticación de cada servicio. La prueba del APK firmado requiere el backend local y el puente HTTPS del emulador descritos en la guía.
+
+![Huella del APK firmado y del JKS académico](docs/evidencias/control3-firma.png)
+
 ## Pruebas
 
     .\gradlew.bat testDebugUnitTest
@@ -122,6 +145,6 @@ Las licencias de las fuentes y los íconos están en app/src/main/res/raw/. Los 
 
 La revisión editorial de las tres pantallas de acceso, el carrusel y el movimiento reducido está documentada en [Acceso editorial](docs/ACCESO_EDITORIAL_2026-10-28.md). Para publicar el código, sigue [Crear repositorio en GitHub](docs/CREAR_REPOSITORIO_GITHUB.txt).
 
-La [splash y la limpieza por perfil](docs/SPLASH_LIMPIEZA_2026-10-28.md) añaden la entrada animada y acciones para vaciar solicitudes y notificaciones de la cuenta actual conservando el historial de negocio.
+La [splash y la limpieza por perfil](docs/SPLASH_LIMPIEZA_2026-10-28.md) añaden la entrada animada y la limpieza de notificaciones de la cuenta actual. La limpieza de solicitudes queda disponible para el administrador; el cliente puede cancelarlas conservando el historial de negocio.
 
 La revisión de [cantidad y cancelación de solicitudes](docs/SOLICITUDES_CANTIDAD_CANCELACION_2026-10-28.md) sustituye la limpieza de solicitudes del cliente por cancelación, permite indicar unidades y utiliza una papelera para limpiar avisos.

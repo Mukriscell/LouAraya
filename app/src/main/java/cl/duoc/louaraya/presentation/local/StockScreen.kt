@@ -71,7 +71,7 @@ internal fun StockScreen(product: Product, movements: List<StockMovement>, vm: L
             StockMovementType.DIRECT_SALE -> "Descuenta una venta sin solicitud asociada. Para una compra o reserva registrada, marca su solicitud como Entregada."
             else -> "Descuenta unidades por daño, pérdida u otra salida que no sea una venta."
         }, style = MaterialTheme.typography.bodySmall)
-        Note("Las compras y reservas descuentan una unidad al marcarse Entregadas. Las cotizaciones personalizadas no descuentan la pieza de referencia. Cambiar después el estado no devuelve unidades; registra una entrada si la pieza vuelve a bodega.")
+        Note("Las compras y reservas descuentan la cantidad solicitada al marcarse entregadas. Las cotizaciones personalizadas conservan el stock de la pieza de referencia. Si la pieza vuelve a bodega, registra una entrada.")
         HorizontalDivider()
         Text("Historial de movimientos", style = MaterialTheme.typography.titleLarge)
         if (movements.isEmpty()) Text("Aún no hay movimientos para esta pieza.")

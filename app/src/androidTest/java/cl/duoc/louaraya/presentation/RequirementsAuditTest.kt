@@ -93,7 +93,7 @@ class RequirementsAuditTest {
         compose.onNodeWithTag("tab-catalog").performClick()
         compose.onNodeWithContentDescription("Guardar favorito: Tapiz Aurora").performScrollTo().performClick()
         compose.waitUntil(10_000) { runBlocking { 1L in cases.snapshot().favoriteIds } }
-        compose.onNodeWithContentDescription("Mi perfil").performClick()
+        compose.openDemoProfile()
         fill("Nombre", "Perfil editado de prueba")
         fill("Nombre de Usuario", "$alias.editado")
         click("Guardar perfil")
@@ -200,7 +200,7 @@ class RequirementsAuditTest {
 
             compose.activityRule.scenario.recreate()
             waitText("Escanear QR")
-            compose.onNodeWithContentDescription("Mi perfil").performClick()
+            compose.openDemoProfile()
             click("Cerrar sesión / cambiar usuario")
             waitText("Comenzar"); click("Comenzar"); waitText("Nombre de Usuario")
             fill("Nombre de Usuario", "cliente.demo")

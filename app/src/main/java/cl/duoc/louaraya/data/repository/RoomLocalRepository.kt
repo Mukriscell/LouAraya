@@ -23,10 +23,14 @@ class RoomLocalRepository(private val db: LouArayaDatabase) : LocalRepository {
 
     override suspend fun <T> transaction(block: suspend () -> T): T = db.withTransaction { block() }
 
-    override suspend fun initialize() = withContext(Dispatchers.IO) {
+    override suspend fun initialize() = initialize(connected = false)
+
+    internal suspend fun initialize(connected: Boolean) = withContext(Dispatchers.IO) {
         db.withTransaction {
-            seedUser(1, "Cliente Lou Araya", "cliente.demo", "CLIENT", "Cliente de demostración")
-            seedUser(2, "Administración Lou Araya", "admin.demo", "ADMIN", "Administración demo")
+            if (!connected) {
+                seedUser(1, "Cliente Lou Araya", "cliente.demo", "CLIENT", "Cliente de demostración")
+                seedUser(2, "Administración Lou Araya", "admin.demo", "ADMIN", "Administración demo")
+            }
 
             val events = listOf(
                 FairEventEntity(1, "Feria Textil de Primavera", "2026-11-14", "Parque Bicentenario, Santiago", -33.401, -70.601),
@@ -84,6 +88,33 @@ class RoomLocalRepository(private val db: LouArayaDatabase) : LocalRepository {
         }
     }
     override suspend fun signOut() = dao.clearSession()
+
+    /** Cache a server identity in the separate connected-mode database without a local password. */
+    internal suspend fun startConnectedSession(profile: UserProfile) = db.withTransaction {
+        val existing = dao.user(profile.id)
+        val cached = UserEntity(
+            id = profile.id, name = profile.name, alias = profile.alias,
+            passwordHash = "", passwordSalt = "", role = profile.role.name,
+            avatar = profile.avatar, contact = profile.contact,
+            notificationsEnabled = profile.notificationsEnabled, preferredCategory = profile.preferredCategory,
+            avatarImageReference = existing?.avatarImageReference
+        )
+        // Aliases can change on the server while the mirror is offline. The numeric ID owns local data.
+        dao.userByAlias(profile.alias)?.takeIf { it.id != profile.id }?.let { previous ->
+            dao.updateUser(previous.copy(alias = "local-cache:${previous.id}"))
+        }
+        if (existing == null) dao.insertUser(cached) else dao.updateUser(cached)
+        dao.saveSession(SessionEntity(userId = cached.id))
+    }
+
+    internal suspend fun cacheConnectedProducts(products: List<Product>) = db.withTransaction {
+        for (product in products) {
+            val previous = db.productDao().getById(product.id)?.toDomain()
+            val cached = product.copy(imageReference = previous?.imageReference)
+            if (cached != previous) db.productDao().save(cached.toEntity())
+        }
+    }
+
     override suspend fun updateProfile(profile: UserProfile) {
         val old = requireNotNull(dao.user(profile.id))
         dao.updateUser(old.copy(alias = profile.alias, name = profile.name, avatar = profile.avatar, contact = profile.contact, notificationsEnabled = profile.notificationsEnabled, preferredCategory = profile.preferredCategory, avatarImageReference = profile.avatarImageReference))

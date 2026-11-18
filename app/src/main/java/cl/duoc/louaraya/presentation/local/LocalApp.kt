@@ -270,7 +270,7 @@ private fun MemberNavigation(container: AppContainer, vm: LocalAppViewModel, sta
                     else StockScreen(product, snapshot.stockMovements.filter { it.productId == product.id }, vm)
                 }
                 composable("campaigns") { if (admin) CampaignManagementScreen(snapshot, open) else Text("Acceso restringido") }
-                composable("profile") { ProfileScreen(actor, vm, open, container.avatarImageStorage) }
+                composable("profile") { ProfileScreen(actor, vm, open, container.avatarImageStorage, container.campaignPush) }
                 composable("avatar-photo") { back ->
                     val photoVm: AvatarPhotoViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                         private fun createPhoto(handle: SavedStateHandle) = AvatarPhotoViewModel(actor.id, container.avatarImageStorage, cl.duoc.louaraya.domain.usecase.UpdateAvatarPhotoUseCase(container.localUseCases, container.avatarImageStorage), handle)
@@ -293,7 +293,7 @@ private fun MemberNavigation(container: AppContainer, vm: LocalAppViewModel, sta
                 }
                 composable("product/{id}?journey={journey}", arguments = journeyArguments) { back ->
                     val product = snapshot.products.firstOrNull { it.id == back.arguments?.getLong("id") && (admin || it.active) }
-                    if (state.readError != null) Page { StateContent("No pudimos abrir\nesta pieza.", "Vuelve a cargar sus detalles para continuar.", action = "Reintentar", onAction = vm::refresh); SecondaryAction("Volver al catálogo") { open("catalog") } }
+                    if (product == null && state.readError != null) Page { StateContent("No pudimos abrir\nesta pieza.", "Vuelve a cargar sus detalles para continuar.", action = "Reintentar", onAction = vm::refresh); SecondaryAction("Volver al catálogo") { open("catalog") } }
                     else if (state.busy && snapshot.products.isEmpty()) Page { StateContent("Preparando\nlos detalles.", "Estamos cargando la información de esta pieza.", loading = true) }
                     else if (product == null) Page { StateContent("Esta pieza ya no\nestá disponible.", "El producto no existe o ya no está disponible. Puedes descubrir otros diseños en el catálogo.", action = "Volver al catálogo") { open("catalog") } }
                     else ProductScreen(product, snapshot, imageStorage, vm, contextualOpen(back.arguments?.getString("journey")), back.arguments?.getString("journey"))

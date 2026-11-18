@@ -15,6 +15,8 @@ kotlin = "2.2.10"
 composeBom = "2026.02.01"
 ksp = "2.3.12"
 room = "2.8.5"
+retrofit = "2.11.0"
+unifiedPush = "3.3.5"
 kotlinxCoroutinesTest = "1.9.0"
 navigationCompose = "2.9.5"
 exifInterface = "1.4.2"
@@ -25,6 +27,9 @@ osmdroid = "6.1.20"
 robolectric = "4.16.1"
 
 [libraries]
+retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
+unified-push-connector = { module = "org.unifiedpush.android:connector", version.ref = "unifiedPush" }
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camera" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camera" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camera" }

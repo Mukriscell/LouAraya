@@ -2,6 +2,8 @@ package cl.duoc.louaraya.presentation
 
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
@@ -19,4 +21,11 @@ internal fun AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActi
     waitUntil(15_000) { onAllNodes(hasText("Escanear QR") or hasTestTag("tab-home")).fetchSemanticsNodes().isNotEmpty() }
     if (onAllNodes(hasTestTag("tab-home")).fetchSemanticsNodes().isNotEmpty()) onNodeWithTag("tab-home").performClick()
     waitUntil(15_000) { onAllNodes(hasText("Escanear QR")).fetchSemanticsNodes().isNotEmpty() }
+}
+
+internal fun AndroidComposeTestRule<ActivityScenarioRule<MainActivity>, MainActivity>.openDemoProfile() {
+    val button = hasContentDescription("Mi perfil") and isEnabled()
+    waitUntil(15_000) { onAllNodes(button).fetchSemanticsNodes().isNotEmpty() }
+    onNode(button).performClick()
+    waitUntil(15_000) { onAllNodes(hasText("Tu imagen de perfil")).fetchSemanticsNodes().isNotEmpty() }
 }
