@@ -83,6 +83,8 @@ La revisión de entrega corrigió tres casos que podían afectar el recorrido co
 - Una solicitud o un movimiento de stock con respuesta incierta conserva su referencia de reintento aunque venza la sesión. Al volver a entrar, el servidor puede reconocer el reintento y evitar un duplicado.
 - Una campaña dirigida por categoría también llega a los clientes que guardaron la colección anunciada. La bandeja y el envío push aplican la misma regla.
 
+La revisión pasó tres pruebas en un Motorola Edge 50 Fusion con Android 16. La variante de prueba conectada por ADB completó una reserva en horizontal con el botón visible, el recorrido de catálogo y solicitudes con cambio de estado y stock, y la lectura de una etiqueta QR. El APK firmado del paquete está configurado para el emulador.
+
 | Indicador | Peso | Evidencia |
 | --- | --- | --- |
 | IE 3.1.1 · Pantallas, formularios y navegación | 15 % | Se verificaron 16 casos en el emulador entre la ejecución inicial y las repeticiones de casos de interfaz. Incluyen acceso, registro, perfil, favoritos, cámara, QR, Ferias, formularios comerciales, editores del taller, avisos y el formulario de reserva en horizontal con teclado. |
