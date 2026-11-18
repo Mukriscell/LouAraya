@@ -135,19 +135,12 @@ El [contrato completo del backend](backend/README.md#api) documenta los métodos
     .\gradlew.bat assembleDebugAndroidTest
     .\gradlew.bat connectedDebugAndroidTest
 
-La última orden requiere un teléfono o emulador de prueba y puede crear cuentas, fotografías y solicitudes ficticias en esa instalación. Los reportes se generan en app/build/reports/. Los resultados de la preparación de entrega están en [Verificación](docs/VERIFICACION_ENTREGA.md).
+La última orden requiere un teléfono o emulador de prueba y puede crear cuentas, fotografías y solicitudes ficticias en esa instalación. Los reportes se generan en `app/build/reports/`. Consulta los [resultados del Control 3](docs/CONTROL_3_DESARROLLO.md#evidencia-para-la-pauta-del-encargo).
 
 ## Documentación
 
 - [Caso del proyecto](<documentacion/037 SEC005D_Formato_de_Caso_Lou_Araya.pdf>).
-- [Alcance funcional](docs/MVP_LOCAL.md).
-- [Matriz de funcionalidades](docs/MATRIZ_FUNCIONAL_REQUERIMIENTOS.md).
-- [Gestión de stock y bodega](docs/STOCK_2026-10-25.md).
+- [Guía de desarrollo y pruebas](docs/CONTROL_3_DESARROLLO.md).
+- [Registro de tareas y evidencias de Trello](docs/evidencias/CONTROL_3_TRELLO.md).
 
-Las licencias de las fuentes y los íconos están en app/src/main/res/raw/. Los avisos del Gradle Wrapper están en licenses/.
-
-La revisión editorial de las tres pantallas de acceso, el carrusel y el movimiento reducido está documentada en [Acceso editorial](docs/ACCESO_EDITORIAL_2026-10-28.md). Para publicar el código, sigue [Crear repositorio en GitHub](docs/CREAR_REPOSITORIO_GITHUB.txt).
-
-La [splash y la limpieza por perfil](docs/SPLASH_LIMPIEZA_2026-10-28.md) añaden la entrada animada y la limpieza de notificaciones de la cuenta actual. La limpieza de solicitudes queda disponible para el administrador; el cliente puede cancelarlas conservando el historial de negocio.
-
-La revisión de [cantidad y cancelación de solicitudes](docs/SOLICITUDES_CANTIDAD_CANCELACION_2026-10-28.md) sustituye la limpieza de solicitudes del cliente por cancelación, permite indicar unidades y utiliza una papelera para limpiar avisos.
+Las licencias de las fuentes y los íconos están en `app/src/main/res/raw/`. Los avisos del Gradle Wrapper están en `licenses/`.
