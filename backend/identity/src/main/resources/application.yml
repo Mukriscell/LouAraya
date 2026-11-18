@@ -1,0 +1,22 @@
+server:
+  address: ${LOUARAYA_BIND:127.0.0.1}
+  port: ${LOUARAYA_IDENTITY_PORT:8081}
+spring:
+  application:
+    name: louaraya-identity
+  datasource:
+    url: ${LOUARAYA_IDENTITY_DB_URL:jdbc:postgresql://127.0.0.1:${LOUARAYA_DB_PORT:54329}/louaraya?currentSchema=identity}
+    username: ${LOUARAYA_DB_USER:louaraya}
+    password: ${LOUARAYA_DB_PASSWORD:}
+  flyway:
+    default-schema: identity
+    schemas: identity
+    create-schemas: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+louaraya:
+  demo-password: ${LOUARAYA_DEMO_PASSWORD:}
+  session-hours: 12

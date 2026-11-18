@@ -1,0 +1,23 @@
+server:
+  address: ${LOUARAYA_BIND:127.0.0.1}
+  port: ${LOUARAYA_TALLER_PORT:8082}
+spring:
+  application:
+    name: louaraya-taller
+  datasource:
+    url: ${LOUARAYA_TALLER_DB_URL:jdbc:postgresql://127.0.0.1:${LOUARAYA_DB_PORT:54329}/louaraya?currentSchema=taller}
+    username: ${LOUARAYA_DB_USER:louaraya}
+    password: ${LOUARAYA_DB_PASSWORD:}
+  flyway:
+    default-schema: taller
+    schemas: taller
+    create-schemas: true
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+louaraya:
+  identity-url: ${LOUARAYA_IDENTITY_URL:http://127.0.0.1:8081}
+  push-origin: ${LOUARAYA_PUSH_ORIGIN:}
+  push-transport: ${LOUARAYA_PUSH_TRANSPORT:}
